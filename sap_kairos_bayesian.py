@@ -100,7 +100,8 @@ class KairosBayesian:
         return {
             "posterior": posterior.tolist(),
             "dominant_stage": dominant,
-            "stage_name": meta.get("human_name", meta.get("name", "")),
+            "stage_name": meta.get("name", ""),          # canonical SAP name (constitutional)
+            "stage_human_name": meta.get("human_name", ""),  # therapeutic framing (supplementary)
             "arc": meta.get("arc", ""),
             "polyvagal": meta.get("polyvagal", "unknown"),
             "expected_stage": round(expected, 4),
