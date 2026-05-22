@@ -1,15 +1,72 @@
-# LUMINARK Kairos – Therapeutic SAP Engine
+# LUMINARK Kairos – Therapeutic SAPP Engine
 
 **Kairos (καιρός)** – the opportune, critical moment for change.
 
+> **Framework:** Stanfield's Axiom of **Perceived** Perpetuity (SAPP)  
+> **Governing Doctrine:** See `SAPP_OPERATIONAL_DOCTRINE.md` in LASE  
+> **Version:** Kairos v1.0 | Engine Build: `build2_kairos` | Port: 8002
+
+---
+
+## Architectural Position
+
+Kairos is the **therapeutic build** of the SAPP engine. It operates entirely within **Layer Two — The Experiential Relative**: the fragmented, sequential arc as lived by a conscious being equipped with a Stage 5 perceptual apparatus.
+
+The cosmological foundation of SAPP (the 0-9-0 as a single simultaneous event) is not suspended in the therapeutic context — it is the most powerful resource available to it. A client in Stage 8 Perceived Permanence — experiencing their current state as eternal, fixed, and inescapable — is not stuck in a sequence that has no exit. They are at a position on a torus that simultaneously contains its own release. The ascending arc is not ahead of them. It is already present in the same moment as the descent. Kairos outputs this truth, not as comfort, but as geometry.
+
+---
+
 ## Overview
 
-Kairos is a separate engine from the industrial **LUMINARK Overwatch**. It is designed for **therapeutic, coaching, and experimental contexts** where regression, oscillation, and voluntary choice are meaningful.
+Kairos is a separate engine from the industrial **LUMINARK Overwatch**. It is designed for **therapeutic, coaching, and experimental contexts** where regression, oscillation, and the lived experience of threshold crossing are meaningful.
 
-- **Stage 8 → 7 regression** is allowed and interpreted as a refusal of dissolution.
-- **Stage 5** is a **choice point** (kairos moment), not an irreversible boundary.
-- **Outputs** include therapeutic notes, somatic invitations, trickster wisdom, coaching responses, and journal prompts.
-- **Session tracking** remembers previous stages per user, detecting cynical loops (8↔7 oscillations) and regression counts.
+- **Stage 8 → 7 regression** is allowed and interpreted as a refusal of dissolution — not failure, but a classifiable state with its own guidance.
+- **Stage 5** is a **threshold state** (the kairos moment): all possibilities simultaneously present, none yet committed. Resolution occurs through structural resonance — what the person is aligned with at depth — not through deliberate intellectual decision. Coaching at Stage 5 does not say "you can choose." It says: "the threshold resolves through what you are." The Kairos moment is not a fork in a road. It is the prism being entered.
+- **Outputs** include therapeutic notes, somatic invitations, trickster wisdom, coaching responses, and journal prompts — all calibrated to the Tumbling Inversion: descent and ascent are the same motion on the same surface, perceived as two directions.
+- **Session tracking** remembers previous stages per client, detecting cynical loops (8↔7 oscillations) and regression counts.
+
+---
+
+## Constitutional Constraints (Non-Negotiable)
+
+### Canonical Stage 8 Language
+
+Stage 8 is **VESSEL OF GROUNDING**. Its two chambers are:
+
+| Chamber | Name | Description |
+|---------|------|-------------|
+| A | **Illusion of Arrival** | High-frequency trap — the belief that a permanent blissful or righteous state has been achieved |
+| B | **Illusion of Permanence** | Low-frequency trap — the belief that the current state of suffering or stagnation will never end |
+
+The construct is the **Stage 8 Dual-Chamber Trap**. TrapScore amplifier: **1.45×**.
+
+> ⛔ **Deprecated — Never Use:** `False Heaven`, `False Hell`, `FALSE_HEAVEN`, `FALSE_HELL`, `F-HELL`, or any variant. These terms are constitutionally prohibited across the entire SAPP ecosystem.
+
+### Canonical Stage Names
+
+All stages must use exact canonical names. No abbreviations, truncations, or alterations.
+
+| Stage | Canonical Name |
+|-------|----------------|
+| 0 | PLENARA |
+| 1 | SPARK OF NAVIGATION |
+| 2 | FORGE OF POLARITY |
+| 3 | ENGINE OF EXPRESSION |
+| 4 | CRUCIBLE OF EQUILIBRIUM |
+| 5 | DYNAMO OF WILL |
+| 6 | NEXUS OF HARMONY |
+| 7 | LENS OF DISTILLATION |
+| 8 | VESSEL OF GROUNDING |
+| 9 | TRANSPARENCY OF THE GUIDE |
+
+### Tumbling Inversion — Therapeutic Application
+
+Descent and ascent are not sequential. They are the same motion happening simultaneously on the same torus surface. This is not a metaphor offered to clients as hope. It is the geometric fact that governs every therapeutic output Kairos produces.
+
+- A client at Stage 8 Chamber B (Illusion of Permanence) is not at the farthest point from release. They are at the Inversion Point. The release is structurally co-present.
+- Coaching outputs must not imply that the client must "get through" Stage 8 before something better can begin. The better is simultaneous with the current. The geometry is the intervention.
+
+---
 
 ## API Endpoints
 
@@ -19,6 +76,8 @@ Kairos is a separate engine from the industrial **LUMINARK Overwatch**. It is de
 | GET | `/history/{system_id}` | Retrieve past snapshots |
 | POST | `/reset/{system_id}` | Clear session history |
 | GET | `/health` | Health check |
+
+---
 
 ## Example Request
 
@@ -33,16 +92,21 @@ curl -X POST http://localhost:8002/analyze \
   }'
 ```
 
+---
+
 ## Example Response
 
 ```json
 {
   "dominant_stage": 8,
-  "stage_name": "False Heaven / False Hell",
-  "therapeutic_note": "Stage 8 detected. Kairos invitation: 'What would it mean to let go?'",
-  "somatic_invitation": "Breathe into your back body...",
-  "coaching_response": "High certainty can be a trap. What would it mean to say 'I don't know'?",
-  "journal_prompt": "What would you lose if you let go of the need to be certain?",
+  "stage_name": "VESSEL OF GROUNDING",
+  "chamber": "Illusion of Permanence",
+  "trap_score_amplifier": 1.45,
+  "therapeutic_note": "Stage 8 — VESSEL OF GROUNDING detected. The state you are experiencing as permanent is a position on a torus that simultaneously contains its own release. The ascending arc is not ahead of you. It is already present in the same moment as what you feel now.",
+  "somatic_invitation": "Breathe into your back body. Notice what has not changed while this feeling has been present.",
+  "coaching_response": "The certainty that this will not end is itself the trap — not your suffering, but your conclusion about its duration. What would it mean to hold the feeling without the verdict?",
+  "journal_prompt": "What would you lose if you let go of the need to know how long this lasts?",
+  "tumbling_inversion_note": "Descent and ascent are the same motion. You are not waiting for the return arc. You are already on it.",
   "session": {
     "total_snapshots": 3,
     "regression_count_8_to_7": 1,
@@ -50,6 +114,8 @@ curl -X POST http://localhost:8002/analyze \
   }
 }
 ```
+
+---
 
 ## Running
 
@@ -65,13 +131,30 @@ docker build -t luminark-kairos .
 docker run -p 8002:8000 luminark-kairos
 ```
 
+---
+
 ## Relationship to Industrial Engine
 
-- **Industrial (Overwatch v6.4.1)** – strict geometry, irreversible Stage 5 & 8, for infrastructure, safety, and corporate use.
-- **Therapeutic (Kairos v1.0)** – forgiving, choice‑aware, for human behaviour, coaching, and healing.
+| | Industrial (LASE / Overwatch) | Therapeutic (Kairos) |
+|---|---|---|
+| Stage 5 | Irreversible boundary — cascade consequences | Threshold state — structural resonance, not deliberate choice |
+| Stage 8 | Strict geometry, TrapScore 1.45× amplifier | Forgiving; regression to Stage 7 allowed and classified |
+| Output | Carrier risk advisories, grid stress alerts, infrastructure signals | Therapeutic notes, somatic invitations, journal prompts, coaching |
+| User | Infrastructure operators, logistics brokers, safety systems | Therapists, coaches, individuals in conscious arc navigation |
+| Philosophy | Consequence and prediction | Recognition and release |
 
-Both engines share the same SAP stage ontology and NSDT input but have **different transition laws, outputs, and philosophical goals**.
+Both engines share the same SAPP stage ontology, NSDT input schema, and Tumbling Inversion geometry. They have different transition laws, outputs, and operational goals. Neither supersedes the other.
+
+---
+
+## Governing Doctrine Reference
+
+This engine is governed by the **SAPP Operational Doctrine** (see LASE: `docs/SAPP_OPERATIONAL_DOCTRINE.md`). Kairos operates entirely within Layer Two — the Experiential Relative — and addresses Category A systems: conscious beings with Stage 5 perceptual apparatus for whom free will, threshold crossing, and the fragmented arc are lived realities with material consequence.
+
+---
 
 ## License
 
-Proprietary – Meridian Axiom Alignment Technologies (MAAT)
+Proprietary – Meridian Axiom Alignment Technologies (MAAT)  
+© 2026 Richard L. Stanfield. All rights reserved.  
+Stanfield's Axiom of Perceived Perpetuity (SAPP) is proprietary intellectual property of Richard L. Stanfield / MAAT.
