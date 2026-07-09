@@ -155,6 +155,40 @@
     .row > *{min-width:100%;}
     .bar-row .label{width:100px;}
   }
+
+  .quote-box{
+    border-left:3px solid var(--text-faint); padding:10px 14px; margin-top:12px;
+    font-size:.88rem; color:var(--text-dim); font-style:italic;
+  }
+  .quote-box cite{display:block; margin-top:4px; font-style:normal; font-size:.78rem; color:var(--text-faint);}
+  .breathe-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); border-radius:999px; padding:6px 14px; font-size:.82rem; cursor:pointer; margin-top:12px;
+  }
+  .breathe-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(10,9,15,.82);
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-box{
+    background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:28px 24px; max-width:380px; width:100%; text-align:center;
+  }
+  .modal-box h3{margin:0 0 4px 0;}
+  .modal-box .breath-note{color:var(--text-dim); font-size:.85rem; margin-bottom:22px;}
+  .breath-stage{
+    width:150px; height:150px; margin:0 auto 20px auto; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .breath-circle{
+    width:90px; height:90px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--accent), var(--accent-dim));
+    transform:scale(1); transition:transform 4s linear;
+  }
+  #breathPhase{font-size:1.05rem; font-weight:700; margin-bottom:4px;}
+  #breathCount{color:var(--text-dim); font-size:.85rem; margin-bottom:20px;}
+  .modal-actions{display:flex; gap:10px; justify-content:center;}
 </style>
 </head>
 <body>
@@ -344,6 +378,19 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-overlay" id="breathOverlay">
+  <div class="modal-box">
+    <h3 id="breathTitle">Breathing</h3>
+    <div class="breath-note" id="breathNote"></div>
+    <div class="breath-stage"><div class="breath-circle" id="breathCircleInner"></div></div>
+    <div id="breathPhase">Ready</div>
+    <div id="breathCount"></div>
+    <div class="modal-actions">
+      <button class="btn secondary small" onclick="closeBreathing()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    STAGE DATA — plain-language layer over the canonical SAP
@@ -457,6 +504,121 @@ const STAGES = [
 ];
 const stageByN = n => STAGES[n];
 
+/* ============================================================
+   QUOTES — public-domain sources only (Tao Te Ching trans. James
+   Legge 1891, Meditations trans. George Long 1862, Enchiridion
+   trans. Elizabeth Carter 1758, KJV Bible, Heraclitus fragments).
+   Picked deterministically from the input text, not claimed to be
+   "understood" by anything — see the math panel for how.
+   ============================================================ */
+const QUOTES = {
+  0:[{text:"Attain to utmost emptiness; hold firm to stillness.", author:"Lao Tzu", source:"Tao Te Ching, ch. 16"},
+     {text:"To every thing there is a season, and a time to every purpose under heaven.", author:"Ecclesiastes 3:1", source:"KJV"}],
+  1:[{text:"A journey of a thousand miles begins with a single step.", author:"Lao Tzu", source:"Tao Te Ching, ch. 64"},
+     {text:"Waste no more time arguing what a good man should be. Be one.", author:"Marcus Aurelius", source:"Meditations"}],
+  2:[{text:"And God divided the light from the darkness.", author:"Genesis 1:4", source:"KJV"},
+     {text:"The best revenge is to be unlike him who performed the injury.", author:"Marcus Aurelius", source:"Meditations"}],
+  3:[{text:"It does not matter how slowly you go as long as you do not stop.", author:"attrib. Confucius", source:"traditional"},
+     {text:"First say to yourself what you would be; and then do what you have to do.", author:"Epictetus", source:"Enchiridion"}],
+  4:[{text:"The impediment to action advances action. What stands in the way becomes the way.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"He who knows he has enough is rich.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"}],
+  5:[{text:"You have power over your mind, not outside events. Realize this, and you will find strength.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"It's not what happens to you, but how you react to it that matters.", author:"attrib. Epictetus", source:"traditional"}],
+  6:[{text:"The highest good is like water. Water benefits all things and does not compete.", author:"Lao Tzu", source:"Tao Te Ching, ch. 8"},
+     {text:"That which is not good for the swarm is not good for the bee.", author:"Marcus Aurelius", source:"Meditations"}],
+  7:[{text:"Knowing others is wisdom; knowing yourself is enlightenment.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"},
+     {text:"For in much wisdom is much grief: and he that increaseth knowledge increaseth sorrow.", author:"Ecclesiastes 1:18", source:"KJV"}],
+  8:[{text:"No man ever steps in the same river twice, for it's not the same river and he's not the same man.", author:"Heraclitus", source:"Fragments"},
+     {text:"Everything that exists is in a manner the seed of that which will be.", author:"Marcus Aurelius", source:"Meditations"}],
+  9:[{text:"The hard and stiff will be broken. The soft and supple will prevail.", author:"Lao Tzu", source:"Tao Te Ching, ch. 76"},
+     {text:"A time to be born, and a time to die; a time to plant, and a time to pluck up that which is planted.", author:"Ecclesiastes 3:2", source:"KJV"}],
+};
+
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function pickQuote(stage, seed){
+  const arr = QUOTES[stage] || QUOTES[0];
+  const idx = hashStr(String(seed||stage)) % arr.length;
+  return arr[idx];
+}
+
+/* ============================================================
+   BREATHING — standard, well-known techniques (box breathing,
+   coherent breathing, 4-7-8, the physiological sigh, humming
+   exhale). Not proprietary to this project; picked per stage for
+   how they feel, not backed by a claim that they change outcomes.
+   ============================================================ */
+const BREATHING = {
+  0:{ name:"Extended-Exhale Rest Breath", cycles:5,
+      note:"A pause breath. Nothing to fix here — just noticing the space.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+  1:{ name:"Energizing Breath", cycles:6,
+      note:"A small lift in alertness, without tipping into urgency.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:2,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"}] },
+  2:{ name:"Box Breathing", cycles:4,
+      note:"An even breath with clean edges — mirrors the boundary you're drawing.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:4,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"},{label:"Hold",seconds:4,scale:"scale(0.85)"}] },
+  3:{ name:"Coherent Breathing", cycles:6,
+      note:"A steady, even breath — a rest from the push, not a reward for it.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  4:{ name:"4-7-8 Calming Breath", cycles:4,
+      note:"A well-known calming pattern — useful when 'stable' still feels tense.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hold",seconds:7,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.8)"}] },
+  5:{ name:"Physiological Sigh", cycles:3,
+      note:"A fast nervous-system reset, often used right before a hard decision.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:6,scale:"scale(0.8)"}] },
+  6:{ name:"Coherent Breathing", cycles:6,
+      note:"An even, resonant breath — matches a stage where things are clicking together.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  7:{ name:"Humming Exhale", cycles:5,
+      note:"Humming on the exhale stimulates the vagus nerve — brings insight back into the body.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hum, exhale",seconds:7,scale:"scale(0.85)"}] },
+  8:{ name:"Extended-Exhale Release", cycles:5,
+      note:"A release breath for when certainty is doing the gripping.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:8,scale:"scale(0.8)"}] },
+  9:{ name:"Extended-Exhale Rest Breath", cycles:6,
+      note:"A long, slow close — the exhale that lets a chapter end.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+};
+
+let breathTimer = null;
+function openBreathing(stageNum){
+  const b = BREATHING[stageNum];
+  document.getElementById("breathTitle").textContent = `Stage ${stageNum} — ${b.name}`;
+  document.getElementById("breathNote").textContent = b.note;
+  document.getElementById("breathOverlay").style.display = "flex";
+  document.getElementById("breathCircleInner").style.transform = "scale(1)";
+  clearTimeout(breathTimer);
+  breathTimer = setTimeout(()=>runBreathPhase(b, 0, 1), 400);
+}
+function closeBreathing(){
+  clearTimeout(breathTimer);
+  document.getElementById("breathOverlay").style.display = "none";
+}
+function runBreathPhase(b, phaseIdx, cycleNum){
+  if(cycleNum > b.cycles){
+    document.getElementById("breathPhase").textContent = "Done";
+    document.getElementById("breathCount").textContent = `Completed ${b.cycles} cycles.`;
+    document.getElementById("breathCircleInner").style.transitionDuration = "1.5s";
+    document.getElementById("breathCircleInner").style.transform = "scale(1)";
+    return;
+  }
+  const phase = b.pattern[phaseIdx];
+  const circle = document.getElementById("breathCircleInner");
+  document.getElementById("breathPhase").textContent = phase.label;
+  document.getElementById("breathCount").textContent = `Cycle ${cycleNum} of ${b.cycles}`;
+  circle.style.transitionDuration = phase.seconds + "s";
+  circle.style.transform = phase.scale;
+  breathTimer = setTimeout(()=>{
+    const nextIdx = (phaseIdx + 1) % b.pattern.length;
+    const nextCycle = nextIdx === 0 ? cycleNum + 1 : cycleNum;
+    runBreathPhase(b, nextIdx, nextCycle);
+  }, phase.seconds * 1000);
+}
+
 // Ported from engine/container_rule_engine.py — kept for the "show the math" panel.
 const MAGNETIC_DRAG = {0:0,1:20,2:15,3:90,4:40,5:60,6:90,7:50,8:100,9:0};
 const FLUX_CLASS = {0:"VOID",1:"SEED",2:"POLARITY_FORGE",3:"MAGNETIC_POLE_POSITIVE",4:"EQUILIBRIUM",
@@ -490,7 +652,7 @@ function computeReading(text){
   const canon = CANONICAL_PAIRS[stage];
   const onCanonical = canon && canon[0]===content && canon[1]===container;
   return { wordCount, letterCount, content, container, sum, dr, stage, resonance, onCanonical,
-    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage] };
+    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage], quote: pickQuote(stage, t) };
 }
 
 /* ============================================================
@@ -603,6 +765,8 @@ function readingHTML(reading, forEntryId){
         <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
       </div>
       <div class="prompt-box">${s.prompt}</div>
+      <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
+      <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
       <details class="math">
         <summary>Show the math</summary>
         <table>
@@ -671,7 +835,9 @@ function renderScanHistory(){
       ${e.title ? `<b>${escapeHTML(e.title)}</b>` : ""}
       <div class="body">${escapeHTML(truncate(e.text, 240))}</div>
       ${e.note ? `<div class="note">${escapeHTML(e.note)}</div>` : ""}
+      ${e.reading.quote ? `<div class="quote-box">"${e.reading.quote.text}"<cite>— ${e.reading.quote.author}, ${e.reading.quote.source}</cite></div>` : ""}
       <div class="entry-actions">
+        <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${e.reading.stage})">🫁 Breathe (${BREATHING[e.reading.stage].name})</button>
         <button class="btn secondary small" onclick="deleteScanEntry('${e.id}')">Delete</button>
       </div>
     </div>`).join("");
@@ -722,18 +888,20 @@ function setCheckinMode(mode){
 
 function saveCheckin(){
   if(!selectedAreaId) return;
-  let stage, text = "";
+  let stage, text = "", quote;
   if(checkinMode==="text"){
     text = document.getElementById("checkinText").value;
     const reading = computeReading(text);
     if(!reading){ showToast("Write a sentence or two first"); return; }
     stage = reading.stage;
+    quote = reading.quote;
   } else {
     stage = parseInt(document.getElementById("checkinManualStage").value, 10);
+    quote = pickQuote(stage, "manual-" + Date.now());
   }
   const checkin = {
     id: uid(), ts: Date.now(), areaId: selectedAreaId, mode: checkinMode,
-    text, stage, note: document.getElementById("checkinNote").value.trim(),
+    text, stage, quote, note: document.getElementById("checkinNote").value.trim(),
   };
   STATE.checkins.push(checkin);
   saveState();
@@ -819,7 +987,11 @@ function renderAreaHistory(){
             </div>
             ${c.text ? `<div class="body">${escapeHTML(truncate(c.text,200))}</div>` : ""}
             ${c.note ? `<div class="note">${escapeHTML(c.note)}</div>` : ""}
-            <div class="entry-actions"><button class="btn secondary small" onclick="deleteCheckin('${c.id}')">Delete</button></div>
+            ${c.quote ? `<div class="quote-box">"${c.quote.text}"<cite>— ${c.quote.author}, ${c.quote.source}</cite></div>` : ""}
+            <div class="entry-actions">
+              <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${c.stage})">🫁 Breathe (${BREATHING[c.stage].name})</button>
+              <button class="btn secondary small" onclick="deleteCheckin('${c.id}')">Delete</button>
+            </div>
           </div>`).join("")}
       </div>`;
   }).join("");
@@ -912,14 +1084,19 @@ function renderHabitsTab(){
    STAGE GUIDE
    ============================================================ */
 function renderGuide(){
-  document.getElementById("guideList").innerHTML = STAGES.map(s=>`
+  document.getElementById("guideList").innerHTML = STAGES.map(s=>{
+    const b = BREATHING[s.n];
+    return `
     <div class="guide-stage">
       <h3>${stageBadgeHTML(s.n)} <span style="color:var(--text-dim); font-weight:400;">${s.human}</span></h3>
       <p style="color:var(--text-dim); margin:4px 0 8px 0;">${s.essence}</p>
       <b style="font-size:.85rem; color:var(--text-dim)">Habits to watch for:</b>
       <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
       <div class="prompt-box">${s.prompt}</div>
-    </div>`).join("");
+      ${QUOTES[s.n].map(q=>`<div class="quote-box">"${q.text}"<cite>— ${q.author}, ${q.source}</cite></div>`).join("")}
+      <button class="breathe-btn" onclick="openBreathing(${s.n})">🫁 ${b.name} (${b.cycles} cycles)</button>
+    </div>`;
+  }).join("");
 }
 
 /* ============================================================
