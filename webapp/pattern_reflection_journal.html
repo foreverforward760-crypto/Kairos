@@ -257,6 +257,29 @@
     </div>
 
     <div class="card">
+      <h2>What's new</h2>
+      <p class="lead" style="margin-bottom:10px;">A few pieces of this project's own framework beyond raw digit-root
+        math, added honestly:</p>
+      <ul class="habits" style="margin-bottom:14px;">
+        <li><b>Inversion</b> — every reading now shows whether the stage reads as physically stable/unstable
+          vs. consciously stable/unstable, ported from the Container Rule engine's own labeling.</li>
+        <li><b>Stage 5 fork</b> — Stage 5 readings now name the three real directions (Advance / Freeze / Crisis)
+          instead of just a habit list.</li>
+        <li><b>Trap accumulation</b> — the Cycle Journal now flags when an area's check-ins repeat Stage 8,
+          using the same consecutive-count logic as the engine's trap detector.</li>
+        <li><b>Deeper zoom</b> — readings can now drill a third level down (nano-position), same transparent
+          math, smaller slice, opt-in.</li>
+        <li><b>Consistency signal</b> — the Cycle Journal now computes real entropy over your own check-in
+          history per area, showing whether it clusters on one stage or scatters.</li>
+      </ul>
+      <p class="lead" style="margin-bottom:0; font-size:.85rem;">Left out on purpose: a formula that scores your
+        odds of success at a decision (its weights were never fit to real outcomes — a percentage would be
+        invented, not computed), and any claim that this can tell real signal from meaningless text. The
+        consistency signal above measures how consistent <i>you've been</i>, not whether your words mean
+        anything.</p>
+    </div>
+
+    <div class="card">
       <h2>Quick stats</h2>
       <div id="homeStats"></div>
       <button class="btn secondary small" onclick="exportAll()">Export all data (.json)</button>
@@ -686,6 +709,41 @@ const FLUX_CLASS = {0:"VOID",1:"SEED",2:"POLARITY_FORGE",3:"MAGNETIC_POLE_POSITI
   5:"THRESHOLD",6:"MAGNETIC_POLE_NEGATIVE",7:"DISTILLATION_DRIFT",8:"HIGH_VOLTAGE_CONTAINMENT",9:"SLIP_STREAM_AXIS"};
 const CANONICAL_PAIRS = {1:[9,1],2:[1,8],3:[2,7],4:[3,6],5:[4,5],6:[5,4],7:[6,3],8:[7,2],9:[8,1]};
 
+// Inversion Principle, ported verbatim from engine/container_rule_engine.py's
+// INVERSION table. This is a labeling convention (odd stage number = physically
+// unstable/consciously stable, even = the reverse, stage 0 = neutral) — a real,
+// consistent part of this project's vocabulary, not a separate measurement.
+const INVERSION = {
+  0:{physical:"Neutral",conscious:"Neutral"}, 1:{physical:"Unstable",conscious:"Stable"},
+  2:{physical:"Stable",conscious:"Unstable"}, 3:{physical:"Unstable",conscious:"Stable"},
+  4:{physical:"Stable",conscious:"Unstable"}, 5:{physical:"Unstable",conscious:"Stable"},
+  6:{physical:"Stable",conscious:"Unstable"}, 7:{physical:"Unstable",conscious:"Stable"},
+  8:{physical:"Stable",conscious:"Unstable"}, 9:{physical:"Unstable",conscious:"Stable"},
+};
+function inversionHTML(stage){
+  const inv = INVERSION[stage];
+  return `<div style="margin-top:10px; font-size:.82rem; color:var(--text-dim);">
+    <b style="color:var(--text)">Inversion:</b> physically ${inv.physical.toLowerCase()}, consciously ${inv.conscious.toLowerCase()}
+    <span style="color:var(--text-faint)"> — ${stage===0 ? "the void carries neither charge" : (stage%2===1 ? "odd-numbered stages read as outwardly shaky but inwardly settled" : "even-numbered stages read as outwardly settled but inwardly unsettled")}</span>
+  </div>`;
+}
+
+// Stage 5 three-way fork, adapted from container_rule_engine.py's own Stage 5
+// signal text. Deliberately NOT computing the sigmoid P(success)/P(regression)
+// formula from the canonical doc — those weights were never fit to real
+// outcomes, so a percentage here would be invented precision, not a result.
+function stage5ForkHTML(){
+  return `<div class="banner" style="margin-top:14px;">
+    <b>Stage 5 is a fork, not just a number.</b> This project's own model treats Stage 5 as the one point
+    where the whole trajectory can still reverse — every other stage runs forward once you're through it.
+    Three directions the framework names: <b>Advance</b> (commit and push through), <b>Freeze / Regress</b>
+    (consciously step back rather than force it), or <b>Crisis</b> (forced collapse if you push without
+    being ready). There's a published-looking formula for the odds of each in this project's source docs —
+    we're not computing it here, because its weights were never fit to real outcomes, and a percentage
+    would just be false confidence wearing a decimal point. Use the prompt below instead.
+  </div>`;
+}
+
 function digitalRoot(n){
   n = Math.abs(Math.trunc(n));
   if(n===0) return 0;
@@ -708,9 +766,14 @@ function computeReading(text){
   const canon = CANONICAL_PAIRS[stage];
   const onCanonical = canon && canon[0]===content && canon[1]===container;
   const micro = computeMicro(t);
+  // Nano level (729-equivalent): the same formula run a third time, on a
+  // smaller slice of the micro slice. Optional deeper resolution, not shown
+  // by default — see the "zoom deeper" toggle in the math panel.
+  const nano = micro ? computeMicro(micro.sliceText) : null;
   return { wordCount, letterCount, content, container, sum, dr, stage, resonance, onCanonical,
     drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage], quote: pickQuote(stage, t),
-    micro, notation: micro ? `${stage}.${micro.micro}` : `${stage}` };
+    micro, nano, notation: micro ? `${stage}.${micro.micro}` : `${stage}`,
+    notation3: (micro && nano) ? `${stage}.${micro.micro}.${nano.micro}` : null };
 }
 
 /* ============================================================
@@ -815,15 +878,18 @@ function readingHTML(reading, forEntryId){
   }
   const s = stageByN(reading.stage);
   const m = reading.micro;
+  const n = reading.nano;
   return `
     <div class="reading">
       ${stageBadgeHTML(reading.stage)}
       <div class="stagename">${s.human} <span style="color:var(--text-faint); font-weight:400; font-size:.85rem;">(notation ${reading.notation})</span></div>
       <div class="human">${s.essence}</div>
+      ${inversionHTML(reading.stage)}
       <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
         <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
       </div>
       <div class="prompt-box">${s.prompt}</div>
+      ${reading.stage===5 ? stage5ForkHTML() : ""}
       ${m ? `
       <div style="margin-top:14px; font-size:.85rem; color:var(--text-dim);">
         <b style="color:var(--text)">Micro-position ${reading.notation}:</b> ${MICRO_FLAVOR[m.micro]}
@@ -841,6 +907,7 @@ function readingHTML(reading, forEntryId){
           <tr><td>"Harmonic resonance"</td><td>${reading.resonance ? "Yes (digital root = 9)" : "No"}</td></tr>
           <tr><td>Flux class label</td><td>${reading.flux}</td></tr>
           <tr><td>Magnetic drag label</td><td>${reading.drag}%</td></tr>
+          <tr><td>Inversion (physical / conscious)</td><td>${INVERSION[reading.stage].physical} / ${INVERSION[reading.stage].conscious}</td></tr>
           ${m ? `
           <tr><td>Micro slice used</td><td>"${escapeHTML(truncate(m.sliceText,80))}"</td></tr>
           <tr><td>Micro word/letter → digit</td><td>${m.wordCount}→${m.content}, ${m.letterCount}→${m.container}</td></tr>
@@ -854,6 +921,15 @@ function readingHTML(reading, forEntryId){
         is the exact same formula run again on the slice shown above — a real recursive drill-down, not a
         different or more precise method.</p>
       </details>
+      ${m && n ? `
+      <details class="math" style="margin-top:6px;">
+        <summary>Zoom deeper (nano-position ${reading.notation3})</summary>
+        <p>The same formula run a third time, on a smaller slice again: "<i>${escapeHTML(truncate(n.sliceText,70))}</i>" → digit ${n.micro}
+          (${MICRO_FLAVOR[n.micro]}).</p>
+        <p style="color:var(--text-faint)">Offered as extra resolution for people who want to zoom further — like a
+          finer-grained map, not a more accurate one. The same "this math finds a pattern in anything" caveat
+          applies at every zoom level; going deeper doesn't make it more true, just more granular.</p>
+      </details>` : ""}
     </div>`;
 }
 
@@ -998,6 +1074,41 @@ function areaCheckins(areaId){
   return STATE.checkins.filter(c=>c.areaId===areaId).sort((a,b)=>a.ts-b.ts);
 }
 
+// Ported from engine/container_rule_engine.py's detect_trap_accumulation:
+// counts how many of the user's own check-ins for this area landed on Stage 8,
+// and how many landed there consecutively — literal counting of their own
+// entries, same as the repeat-stage insight above it.
+function computeTrapRisk(list){
+  const s8total = list.filter(c=>c.stage===8).length;
+  let consecutive = 0;
+  for(let i=list.length-1;i>=0;i--){
+    if(list[i].stage===8) consecutive++; else break;
+  }
+  let risk = "NORMAL";
+  if(consecutive>=3) risk="CRITICAL";
+  else if(consecutive===2) risk="HIGH";
+  else if(s8total>=3) risk="ELEVATED";
+  return { s8total, consecutive, risk };
+}
+
+// Real Shannon entropy over the stages the user has actually logged for this
+// area — not a claim about "signal vs. noise" in any text, just a measure of
+// how consistently their own self-reports cluster on one stage vs. scatter
+// across many. Normalized against log2(10), the max possible spread.
+function stageEntropy(stages){
+  if(stages.length < 4) return null;
+  const freq = {};
+  stages.forEach(s=>freq[s]=(freq[s]||0)+1);
+  let H = 0;
+  Object.values(freq).forEach(c=>{ const p=c/stages.length; H -= p*Math.log2(p); });
+  const Hnorm = H / Math.log2(10);
+  let label;
+  if(Hnorm < 0.3) label = "tightly clustered — a consistent pattern";
+  else if(Hnorm < 0.6) label = "somewhat varied";
+  else label = "scattered across many stages — no dominant pattern yet";
+  return { H: +H.toFixed(2), Hnorm: +Hnorm.toFixed(2), label };
+}
+
 function renderCycleTab(){
   // area chips
   const chipsWrap = document.getElementById("areaChips");
@@ -1057,10 +1168,22 @@ function renderAreaHistory(){
     if(streak >= 1){
       insights.push(`You've logged the same stage ${streak+1} check-ins in a row.`);
     }
+    const entropy = stageEntropy(recent.map(c=>c.stage));
+    if(entropy){
+      insights.push(`Consistency: ${entropy.label} (entropy ${entropy.Hnorm} of a possible 1.0, over your last ${recent.length} check-ins).`);
+    }
+    const trap = computeTrapRisk(list);
     return `
       <h3>${escapeHTML(area.name)}</h3>
       <div class="card">
-        ${insights.length ? `<div class="banner" style="margin-bottom:14px;">${insights.join("<br>")}</div>` : ""}
+        ${insights.length ? `<div class="banner" style="margin-bottom:${trap.risk!=="NORMAL"?"8px":"14px"};">${insights.join("<br>")}</div>` : ""}
+        ${trap.risk!=="NORMAL" ? `<div class="banner" style="margin-bottom:14px; border-color:var(--danger); color:${trap.risk==="CRITICAL"?"var(--danger)":"var(--text-dim)"};">
+          <b style="color:var(--danger)">Trap risk: ${trap.risk}</b> — ${trap.consecutive>=2
+            ? `Stage 8 logged ${trap.consecutive} check-ins in a row here.`
+            : `Stage 8 logged ${trap.s8total} times in this area's history.`}
+          This project's own model treats repeated Stage 8 as compounding (1.45× per repeat) rather than a
+          plateau — worth noticing what's making the current story hard to update.
+        </div>` : ""}
         ${list.slice().reverse().map(c=>`
           <div class="entry">
             <div class="meta">
@@ -1174,7 +1297,8 @@ function renderGuide(){
     <div class="guide-stage">
       <h3>${stageBadgeHTML(s.n)} <span style="color:var(--text-dim); font-weight:400;">${s.human}</span></h3>
       <p style="color:var(--text-dim); margin:4px 0 8px 0;">${s.essence}</p>
-      <b style="font-size:.85rem; color:var(--text-dim)">Habits to watch for:</b>
+      ${inversionHTML(s.n)}
+      <b style="font-size:.85rem; color:var(--text-dim); display:block; margin-top:10px;">Habits to watch for:</b>
       <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
       <div class="prompt-box">${s.prompt}</div>
       ${QUOTES[s.n].map(q=>`<div class="quote-box">"${q.text}"<cite>— ${q.author}, ${q.source}</cite></div>`).join("")}

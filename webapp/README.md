@@ -29,6 +29,32 @@ actually defines `.0`/`.5`/`.9` per Gate. It's disclosed as the same math run tw
 not a more precise instrument. Cycle Journal check-ins get the same micro reading in text mode, and an
 optional manual micro-position selector in self-selected mode.
 
+## Beyond digit-root: what else is real here
+
+The framework this app draws from is more than mod-9 arithmetic — it also has an Inversion Principle
+(odd/even stage parity), a Stage 5 three-way fork (Advance/Freeze/Crisis), a Stage 8 trap-accumulation
+model, and a deeper fractal resolution (81 → 729-equivalent). All four are implemented, ported from or
+consistent with `engine/container_rule_engine.py` in LASE:
+
+- **Inversion** — every reading shows physical/conscious stability per stage, straight from the engine's
+  `INVERSION` table.
+- **Stage 5 fork** — Stage 5 readings surface the three real directions by name, without computing the
+  "probability of success" formula from the source docs, since its weights (`w1`–`w4`, `θ`) were never fit
+  to real outcomes. Showing a percentage there would be invented precision, not a result — so this app
+  names the three directions and lets the prompt do the work instead.
+- **Trap accumulation** — the Cycle Journal flags an area when its check-ins repeat Stage 8, using the same
+  consecutive-count logic (and 1.45× compounding note) as the engine's `detect_trap_accumulation`.
+- **Nano-level zoom** — readings can drill a third digit deep (e.g. `4.5.2`), the same transparent formula
+  run again on a smaller slice, opt-in behind a "zoom deeper" toggle.
+- **Consistency signal** — the Cycle Journal computes real Shannon entropy over your own check-in history
+  per life area, showing whether your self-reports cluster on one stage or scatter across many.
+
+What's deliberately **not** here: the Stage 5 bifurcation sigmoid with its unfitted weights, and any claim
+that entropy or any other feature here can distinguish "real" text from gibberish. The entropy signal
+measures the consistency of a user's own repeated self-reports over time — a real, honest calculation — not
+whether the content of any single entry is meaningful. That's a different (and much harder) problem that
+this app doesn't attempt to solve.
+
 ## The three journals
 
 1. **Pattern Scan** — paste any text, get a stage reading + habits + reflective prompt, save it.
