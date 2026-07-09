@@ -6,7 +6,14 @@ Kairos: the opportune moment for change.
 
 import numpy as np
 from typing import Dict, List, Optional
-from sap_kairos_geometry import KairosGeometry, STAGE_CENTROIDS, AXIS_WEIGHTS, AXIS_SCALES
+from sap_kairos_geometry import (
+    KairosGeometry,
+    STAGE_CENTROIDS,
+    AXIS_WEIGHTS,
+    AXIS_SCALES,
+    STAGE8_TRAP_SCORE_AMPLIFIER,
+    classify_stage8_chamber,
+)
 from sap_energy_layer import SAPEnergy
 
 class KairosBayesian:
@@ -88,8 +95,12 @@ class KairosBayesian:
         therapeutic_note = self._get_therapeutic_note(dominant, entropy, trap_energy)
         somatic_invitation = self._get_somatic_invitation(dominant, meta.get("polyvagal", "ventral"))
 
+        chamber = None
+        trap_score_amplifier = None
         release_protocol = None
         if dominant == 8:
+            chamber = classify_stage8_chamber(x.tolist())
+            trap_score_amplifier = STAGE8_TRAP_SCORE_AMPLIFIER
             release_protocol = {
                 "gratitude": "Acknowledge what the rigidity protected you from. Thank the structure.",
                 "duality": "Identify the binary thinking driving the trap. Find the paradox.",
@@ -111,6 +122,8 @@ class KairosBayesian:
             "therapeutic_note": therapeutic_note,
             "somatic_invitation": somatic_invitation,
             "trickster_wisdom": trickster,
+            "chamber": chamber,
+            "trap_score_amplifier": trap_score_amplifier,
             "release_protocol": release_protocol,
             "mode": "kairos",
             "regression_allowed": self.allow_regression,

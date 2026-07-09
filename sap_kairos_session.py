@@ -5,9 +5,19 @@ Supports in‑memory (default) and optional file persistence.
 
 import json
 import os
+import re
 import time
 from typing import List, Optional
 from dataclasses import dataclass, asdict
+
+
+def _sanitize_system_id(system_id: str) -> str:
+    """Collapse a system_id to a filesystem-safe token before it's ever used
+    in a file path. Without this, storage_backend="file" would let a caller
+    pass system_id values like "../../etc/passwd" and write/read outside the
+    intended data directory (path traversal)."""
+    safe = re.sub(r"[^A-Za-z0-9_-]", "_", system_id or "")
+    return safe[:200] if safe else "unknown"
 
 @dataclass
 class KairosSnapshot:
@@ -21,10 +31,18 @@ class KairosSnapshot:
     trickster_wisdom: str
 
 class KairosSession:
-    def __init__(self, system_id: str, storage_backend: str = "memory", file_path: Optional[str] = None):
+    def __init__(
+        self,
+        system_id: str,
+        storage_backend: str = "memory",
+        file_path: Optional[str] = None,
+        data_dir: Optional[str] = None,
+    ):
         self.system_id = system_id
         self.storage_backend = storage_backend
-        self.file_path = file_path or f"kairos_{system_id}.json"
+        safe_id = _sanitize_system_id(system_id)
+        base_dir = data_dir or "."
+        self.file_path = file_path or os.path.join(base_dir, f"kairos_{safe_id}.json")
         self.snapshots: List[KairosSnapshot] = []
         self._load()
 
@@ -36,6 +54,9 @@ class KairosSession:
 
     def _save(self):
         if self.storage_backend == "file":
+            parent = os.path.dirname(self.file_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
             with open(self.file_path, 'w') as f:
                 json.dump({"snapshots": [asdict(s) for s in self.snapshots]}, f, indent=2)
 

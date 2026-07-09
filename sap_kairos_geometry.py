@@ -25,7 +25,7 @@ STAGE_METADATA_KAIROS = {
         "trickster": "Anansi: 'Weaving the threads of healing takes time – be patient.'"},
     7: {"name": "LENS OF DISTILLATION", "human_name": "Insight & Isolation", "arc": "ascending", "polyvagal": "sympathetic",
         "trickster": "Loki: 'Isolation can become a trap – reach out.'"},
-    8: {"name": "VESSEL OF GROUNDING", "human_name": "False Heaven / False Hell", "arc": "ascending", "polyvagal": "dorsal",
+    8: {"name": "VESSEL OF GROUNDING", "human_name": "The Permanence Trap", "arc": "ascending", "polyvagal": "dorsal",
         "trickster": "Br'er Rabbit: 'Surrender is the only escape from the trap.'"},
     9: {"name": "TRANSPARENCY OF THE GUIDE", "human_name": "Dissolution & Renewal", "arc": "ascending", "polyvagal": "ventral",
         "trickster": "Eshu: 'You have become the threshold – now rest.'"},
@@ -47,6 +47,37 @@ STAGE_CENTROIDS = {
 
 AXIS_WEIGHTS = [1.0, 1.5, 1.5, 1.0, 0.8]
 AXIS_SCALES = [10.0, 10.0, 10.0, 10.0, 10.0]
+
+# --- Stage 8 Dual-Chamber Trap (README: "Constitutional Constraints") ---
+# TrapScore amplifier applied to Stage 8 readings. Constitutional constant,
+# not derived -- see README.md.
+STAGE8_TRAP_SCORE_AMPLIFIER = 1.45
+
+STAGE8_CHAMBER_ARRIVAL = "Illusion of Arrival"
+STAGE8_CHAMBER_PERMANENCE = "Illusion of Permanence"
+
+
+def classify_stage8_chamber(x: List[float]) -> str:
+    """Heuristic Stage 8 chamber classifier.
+
+    README defines two Stage 8 chambers: Chamber A "Illusion of Arrival"
+    (high-frequency trap -- a permanent blissful/righteous state believed
+    achieved) and Chamber B "Illusion of Permanence" (low-frequency trap --
+    a state of suffering/stagnation believed inescapable).
+
+    This is a first-pass, fully disclosed heuristic, NOT a validated
+    clinical instrument. It uses NSDT axis 0 as a provisional valence
+    proxy: at/above the 5.0 midpoint reads as Chamber A, below reads as
+    Chamber B. Axis 0's exact real-world meaning is inferred from the
+    variable name "c" in sap_energy_layer.py, not confirmed elsewhere in
+    this repo -- see docs/NSDT_REFERENCE.md for the full caveat. Replace
+    this with a validated discriminator (or richer multi-axis logic)
+    before relying on the "chamber" field for anything beyond a labeling
+    suggestion.
+    """
+    valence_proxy = x[0]
+    return STAGE8_CHAMBER_ARRIVAL if valence_proxy >= 5.0 else STAGE8_CHAMBER_PERMANENCE
+
 
 class KairosGeometry:
     def __init__(self, allow_regression: bool = True):

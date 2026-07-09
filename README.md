@@ -79,6 +79,9 @@ Descent and ascent are not sequential. They are the same motion happening simult
 
 ---
 
+> See [`docs/NSDT_REFERENCE.md`](docs/NSDT_REFERENCE.md) for what the 5-element `nsdt` vector means, including
+> which parts are confirmed by code vs. best-effort inference that still needs sign-off.
+
 ## Example Request
 
 ```bash
@@ -113,6 +116,32 @@ curl -X POST http://localhost:8002/analyze \
     "cynical_loop_detected": false
   }
 }
+```
+
+`chamber` and `trap_score_amplifier` are only populated when `dominant_stage == 8` (`null` otherwise). Chamber
+classification is a first-pass, disclosed heuristic — see the docstring on `classify_stage8_chamber()` in
+`sap_kairos_geometry.py` and `docs/NSDT_REFERENCE.md` before relying on it clinically.
+
+---
+
+## Configuration
+
+All optional, read from the environment at startup:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `KAIROS_STORAGE_BACKEND` | `memory` | `memory` or `file`. `memory` sessions do not survive a restart and are not shared across multiple uvicorn workers — use `file` for anything beyond local single-process dev. |
+| `KAIROS_DATA_DIR` | `./kairos_data` | Directory for per-client session JSON when `KAIROS_STORAGE_BACKEND=file`. `system_id` is sanitized before being used in a filename, so this is safe against path traversal even with untrusted `system_id` input. |
+| `KAIROS_API_KEY` | unset | If set, every request except `/health` must send a matching `X-API-Key` header. If unset, the API is open — fine for local dev, not for anything network-reachable. |
+| `KAIROS_ALLOWED_ORIGINS` | unset | Comma-separated origins allowed to call this API from a browser (CORS). If unset, no CORS middleware is added at all — the safe default is that no browser can call this cross-origin. |
+
+Example production-leaning run:
+
+```bash
+KAIROS_STORAGE_BACKEND=file \
+KAIROS_DATA_DIR=/var/lib/kairos \
+KAIROS_API_KEY=$(openssl rand -hex 32) \
+uvicorn api_kairos:app --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -160,6 +189,18 @@ It ships three journals — **Pattern Scan** (scan any text/topic and save the r
 (track named life areas over time and surface repeat-stage patterns in your own check-ins), and **Habit
 Log** (a per-stage habit checklist that tallies what recurs) — plus a **Stage Guide** reference tab. All
 data stays in the browser's local storage. See `webapp/README.md` for details.
+
+---
+
+## API vs. Reflection Journal — Independent Classifiers
+
+`api_kairos.py` (Bayesian, NSDT-driven) and `webapp/pattern_reflection_journal.html` (digit-root arithmetic on
+pasted text) are two independent, intentionally separate ways of arriving at a stage. They share the same stage
+names and Tumbling Inversion vocabulary but not the same math, and **can disagree** — a client's `nsdt` vector
+might classify as Stage 5 in the API while the same client's journal text digit-roots to Stage 7 in the web app.
+That's expected, not a bug: one method reads structured clinical input, the other reads text through a
+transparent, disclosed arithmetic lens (see `webapp/README.md`). Don't treat one as a check on the other unless
+you're deliberately comparing them.
 
 ---
 
