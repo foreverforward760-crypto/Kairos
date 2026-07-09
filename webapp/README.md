@@ -17,6 +17,18 @@ grocery list, or keyboard mashing — with equal reliability. Every reading is f
 not a verdict, and the "show the math" panel on every reading exposes the exact numbers used, so nothing
 is hidden.
 
+## Micro-stage (fractal drill-down)
+
+Every Pattern Scan reading also computes a micro-position (e.g. `4.5`) by running the exact same
+word/letter digit-root formula a second time on a smaller slice of the same text — usually your closing
+sentence. This mirrors the project's own canonical 81-stage structure (9 Gates × 9 micro-stages,
+`docs/SAP_STAGE_CANONICAL_REFERENCE.md` §6 in LASE), where `.5` is always a threshold/pivot and `.9` is
+always a transparency/release point across every Gate. The digits in between (`.1`–`.4`, `.6`–`.8`) use
+one shared, generic label set rather than 81 individually-authored ones, since the source doc only
+actually defines `.0`/`.5`/`.9` per Gate. It's disclosed as the same math run twice on a smaller slice,
+not a more precise instrument. Cycle Journal check-ins get the same micro reading in text mode, and an
+optional manual micro-position selector in self-selected mode.
+
 ## The three journals
 
 1. **Pattern Scan** — paste any text, get a stage reading + habits + reflective prompt, save it.

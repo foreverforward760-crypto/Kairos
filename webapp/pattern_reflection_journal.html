@@ -326,6 +326,8 @@
       <div id="checkinManualMode" style="display:none;">
         <label>Which stage does this feel like?</label>
         <select id="checkinManualStage"></select>
+        <label>Micro-position within it (optional)</label>
+        <select id="checkinManualMicro"></select>
       </div>
       <label>Note (optional)</label>
       <input type="text" id="checkinNote" placeholder="Anything you want to remember about this moment">
@@ -366,6 +368,13 @@
     <h2>Stage Guide</h2>
     <p class="lead">The ten stages this tool uses, in plain language. Use this as a reference for recognizing habits
       in yourself — not as a diagnosis.</p>
+    <div class="banner">
+      <b>About the micro-position (e.g. "4.5"):</b> Pattern Scan also reads a smaller slice of what you wrote —
+      usually your closing sentence — through the same digit-root formula, giving a second digit 0–9 nested inside
+      the stage. Across every stage, .5 always lands on a threshold/pivot flavor and .9 always lands on a
+      transparency/release flavor; the digits in between (.1–.4, .6–.8) use one shared, generic set of labels
+      rather than 81 individually-authored ones. It's the same math run twice, not a more precise instrument.
+    </div>
     <div class="card" id="guideList"></div>
   </section>
 
@@ -534,6 +543,58 @@ const QUOTES = {
      {text:"A time to be born, and a time to die; a time to plant, and a time to pluck up that which is planted.", author:"Ecclesiastes 3:2", source:"KJV"}],
 };
 
+/* ============================================================
+   MICRO-STAGE (FRACTAL DRILL-DOWN)
+   The project's own canonical reference (SAP_STAGE_CANONICAL_REFERENCE.md
+   §6) describes each of the 9 Gates as containing 9 micro-stages
+   (Gate.micro, e.g. 4.5), with .5 always a Threshold and .9 always a
+   Transparency/release point across every Gate — that structural
+   convention is real and shared. The 81 *unique* per-Gate micro-names
+   in that doc are not reproduced here (only .0/.5/.9 are actually
+   defined there; .1-.4/.6-.8 aren't). Instead this uses one honest,
+   generic micro layer applied the same way at every Gate, computed
+   with the exact same transparent word/letter digit-root method as
+   the macro stage — just run again on a smaller slice of your text.
+   ============================================================ */
+const MICRO_FLAVOR = {
+  0:"Opening / clearing", 1:"First movement", 2:"Taking shape", 3:"Pushing further",
+  4:"Nearly settled", 5:"Threshold — the pivot point within this stage", 6:"Past the pivot",
+  7:"Loosening", 8:"Gripping — watch for the trap here too",
+  9:"Transparency — the release point within this stage",
+};
+
+function digitRootPair(text){
+  const t = (text||"").trim();
+  const words = t.length ? t.split(/\s+/).filter(Boolean) : [];
+  const letters = (t.match(/\p{L}/gu) || []);
+  const wordCount = words.length, letterCount = letters.length;
+  if(wordCount===0) return null;
+  const content = digitalRoot(wordCount);
+  const container = digitalRoot(letterCount);
+  const sum = content + container;
+  const dr = digitalRoot(sum);
+  return { wordCount, letterCount, content, container, sum, dr };
+}
+
+// Picks a sub-slice of the same text to drill into: the closing sentence
+// if there is more than one, otherwise the second half of the words.
+// Deterministic and disclosed — shown verbatim in the math panel.
+function extractFocusSlice(text){
+  const t = (text||"").trim();
+  const sentences = t.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean);
+  if(sentences.length >= 2) return sentences[sentences.length-1];
+  const words = t.split(/\s+/).filter(Boolean);
+  if(words.length >= 4) return words.slice(Math.ceil(words.length/2)).join(" ");
+  return t;
+}
+
+function computeMicro(fullText){
+  const slice = extractFocusSlice(fullText);
+  const pair = digitRootPair(slice);
+  if(!pair) return null;
+  return { sliceText: slice, ...pair, micro: pair.dr };
+}
+
 function hashStr(s){
   let h = 0;
   for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
@@ -639,20 +700,17 @@ function stageColor(n){
 
 function computeReading(text){
   const t = (text||"").trim();
-  const words = t.length ? t.split(/\s+/).filter(Boolean) : [];
-  const letters = (t.match(/\p{L}/gu) || []);
-  const wordCount = words.length, letterCount = letters.length;
-  if(wordCount===0) return null;
-  const content = digitalRoot(wordCount);
-  const container = digitalRoot(letterCount);
-  const sum = content + container;
-  const dr = digitalRoot(sum);
+  const pair = digitRootPair(t);
+  if(!pair) return null;
+  const { wordCount, letterCount, content, container, sum, dr } = pair;
   const stage = dr; // dr of two 1-9 digits is always 1-9
   const resonance = dr === 9;
   const canon = CANONICAL_PAIRS[stage];
   const onCanonical = canon && canon[0]===content && canon[1]===container;
+  const micro = computeMicro(t);
   return { wordCount, letterCount, content, container, sum, dr, stage, resonance, onCanonical,
-    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage], quote: pickQuote(stage, t) };
+    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage], quote: pickQuote(stage, t),
+    micro, notation: micro ? `${stage}.${micro.micro}` : `${stage}` };
 }
 
 /* ============================================================
@@ -756,15 +814,21 @@ function readingHTML(reading, forEntryId){
     return `<div class="empty">Enter some text to scan.</div>`;
   }
   const s = stageByN(reading.stage);
+  const m = reading.micro;
   return `
     <div class="reading">
       ${stageBadgeHTML(reading.stage)}
-      <div class="stagename">${s.human}</div>
+      <div class="stagename">${s.human} <span style="color:var(--text-faint); font-weight:400; font-size:.85rem;">(notation ${reading.notation})</span></div>
       <div class="human">${s.essence}</div>
       <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
         <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
       </div>
       <div class="prompt-box">${s.prompt}</div>
+      ${m ? `
+      <div style="margin-top:14px; font-size:.85rem; color:var(--text-dim);">
+        <b style="color:var(--text)">Micro-position ${reading.notation}:</b> ${MICRO_FLAVOR[m.micro]}
+        — drawn from your closing line: <i>"${escapeHTML(truncate(m.sliceText,120))}"</i>
+      </div>` : ""}
       <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
       <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
       <details class="math">
@@ -773,15 +837,22 @@ function readingHTML(reading, forEntryId){
           <tr><td>Word count → digit</td><td>${reading.wordCount} → ${reading.content}</td></tr>
           <tr><td>Letter count → digit</td><td>${reading.letterCount} → ${reading.container}</td></tr>
           <tr><td>Sum</td><td>${reading.content} + ${reading.container} = ${reading.sum}</td></tr>
-          <tr><td>Digital root (stage)</td><td>${reading.dr}</td></tr>
+          <tr><td>Digital root (macro stage)</td><td>${reading.dr}</td></tr>
           <tr><td>"Harmonic resonance"</td><td>${reading.resonance ? "Yes (digital root = 9)" : "No"}</td></tr>
           <tr><td>Flux class label</td><td>${reading.flux}</td></tr>
           <tr><td>Magnetic drag label</td><td>${reading.drag}%</td></tr>
+          ${m ? `
+          <tr><td>Micro slice used</td><td>"${escapeHTML(truncate(m.sliceText,80))}"</td></tr>
+          <tr><td>Micro word/letter → digit</td><td>${m.wordCount}→${m.content}, ${m.letterCount}→${m.container}</td></tr>
+          <tr><td>Digital root (micro stage)</td><td>${m.micro}</td></tr>
+          ` : ""}
         </table>
         <p style="margin-top:8px;">These labels come from this project's own internal vocabulary (the Container
         Rule engine). They describe the arithmetic, not a property of your text. Any text of similar length lands
         on a digit-root the same way — "resonance" (digital root 9) shows up whenever the word-digit and
-        letter-digit happen to add to a multiple of 9, which is common by construction, not rare.</p>
+        letter-digit happen to add to a multiple of 9, which is common by construction, not rare. The micro digit
+        is the exact same formula run again on the slice shown above — a real recursive drill-down, not a
+        different or more precise method.</p>
       </details>
     </div>`;
 }
@@ -829,6 +900,7 @@ function renderScanHistory(){
     <div class="entry">
       <div class="meta">
         ${stageBadgeHTML(e.reading.stage)}
+        <span style="color:var(--text-faint)">${e.reading.notation||e.reading.stage}</span>
         <span>${fmtDate(e.ts)}</span>
         ${e.domain ? `<span>· ${e.domain}</span>` : ""}
       </div>
@@ -888,25 +960,31 @@ function setCheckinMode(mode){
 
 function saveCheckin(){
   if(!selectedAreaId) return;
-  let stage, text = "", quote;
+  let stage, text = "", quote, notation, micro = null;
   if(checkinMode==="text"){
     text = document.getElementById("checkinText").value;
     const reading = computeReading(text);
     if(!reading){ showToast("Write a sentence or two first"); return; }
     stage = reading.stage;
     quote = reading.quote;
+    notation = reading.notation;
+    micro = reading.micro;
   } else {
     stage = parseInt(document.getElementById("checkinManualStage").value, 10);
     quote = pickQuote(stage, "manual-" + Date.now());
+    const microVal = document.getElementById("checkinManualMicro").value;
+    notation = microVal !== "" ? `${stage}.${microVal}` : `${stage}`;
+    micro = microVal !== "" ? { micro: parseInt(microVal,10), sliceText: "(self-selected)" } : null;
   }
   const checkin = {
     id: uid(), ts: Date.now(), areaId: selectedAreaId, mode: checkinMode,
-    text, stage, quote, note: document.getElementById("checkinNote").value.trim(),
+    text, stage, notation, micro, quote, note: document.getElementById("checkinNote").value.trim(),
   };
   STATE.checkins.push(checkin);
   saveState();
   document.getElementById("checkinText").value = "";
   document.getElementById("checkinNote").value = "";
+  document.getElementById("checkinManualMicro").value = "";
   showToast("Check-in saved");
   renderCycleTab();
 }
@@ -941,6 +1019,11 @@ function renderCycleTab(){
     const sel = document.getElementById("checkinManualStage");
     if(sel.children.length===0){
       sel.innerHTML = STAGES.map(s=>`<option value="${s.n}">Stage ${s.n} — ${s.canonical} (${s.human})</option>`).join("");
+    }
+    const microSel = document.getElementById("checkinManualMicro");
+    if(microSel.children.length===0){
+      microSel.innerHTML = `<option value="">— not specified —</option>` +
+        Array.from({length:10},(_,i)=>`<option value="${i}">${i} — ${MICRO_FLAVOR[i]}</option>`).join("");
     }
     setCheckinMode(checkinMode);
   } else {
@@ -982,6 +1065,7 @@ function renderAreaHistory(){
           <div class="entry">
             <div class="meta">
               ${stageBadgeHTML(c.stage)}
+              <span style="color:var(--text-faint)">${c.notation||c.stage}</span>
               <span>${fmtDate(c.ts)}</span>
               <span>· ${c.mode==="manual"?"self-selected":"from text"}</span>
             </div>
