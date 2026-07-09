@@ -147,6 +147,22 @@ Both engines share the same SAPP stage ontology, NSDT input schema, and Tumbling
 
 ---
 
+## Reflection Journal (Web App)
+
+`webapp/pattern_reflection_journal.html` is a self-contained, offline-first companion app — open the file
+directly in a browser, no server or build step required. It's framed honestly as an interpretive
+journaling tool (the same category as tarot or the I Ching), not a predictive or diagnostic one: it takes
+any text or life topic — ancient/sacred text, a relationship, work, diet, an emotional trigger, anything —
+and reflects it through the stage vocabulary above using the same Container Rule digit-root math as
+`engine/container_rule_engine.py` in LASE, with the math shown transparently on every reading.
+
+It ships three journals — **Pattern Scan** (scan any text/topic and save the reading), **Cycle Journal**
+(track named life areas over time and surface repeat-stage patterns in your own check-ins), and **Habit
+Log** (a per-stage habit checklist that tallies what recurs) — plus a **Stage Guide** reference tab. All
+data stays in the browser's local storage. See `webapp/README.md` for details.
+
+---
+
 ## Governing Doctrine Reference
 
 This engine is governed by the **SAPP Operational Doctrine** (see LASE: `docs/SAPP_OPERATIONAL_DOCTRINE.md`). Kairos operates entirely within Layer Two — the Experiential Relative — and addresses Category A systems: conscious beings with Stage 5 perceptual apparatus for whom free will, threshold crossing, and the fragmented arc are lived realities with material consequence.

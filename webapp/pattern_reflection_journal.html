@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairos Reflection Journal</title>
+<style>
+  :root{
+    --bg:#14121c; --bg2:#1b1826; --card:#211d2e; --card2:#28233a;
+    --border:#39334c; --text:#eae6f2; --text-dim:#a89fc2; --text-faint:#786f96;
+    --accent:#e0b568; --accent-dim:#8a744a; --danger:#d97b6c; --good:#7fbf9e;
+    --radius:14px; --maxw:840px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    line-height:1.55; padding-bottom:80px;
+  }
+  a{color:var(--accent);}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px;}
+  header.top{
+    background:linear-gradient(180deg,var(--bg2),var(--bg));
+    border-bottom:1px solid var(--border); padding:22px 0 0 0;
+  }
+  header.top h1{
+    font-size:1.5rem; margin:0 0 4px 0; letter-spacing:.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  header.top .tagline{color:var(--text-dim); font-size:.92rem; margin-bottom:16px;}
+  nav.tabs{display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    background:none; border:none; color:var(--text-dim); padding:12px 16px;
+    font-size:.92rem; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent;
+    font-weight:500;
+  }
+  nav.tabs button.active{color:var(--accent); border-bottom:2px solid var(--accent);}
+  nav.tabs button:hover{color:var(--text);}
+
+  main{padding-top:22px;}
+  section.tab{display:none;}
+  section.tab.active{display:block; animation:fadein .15s ease;}
+  @keyframes fadein{from{opacity:0} to{opacity:1}}
+
+  h2{font-size:1.2rem; margin:0 0 6px 0;}
+  h3{font-size:1rem; margin:22px 0 8px 0; color:var(--text);}
+  p.lead{color:var(--text-dim); margin-top:0;}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .card.tight{padding:14px 16px;}
+
+  .banner{
+    background:#2a2338; border:1px solid var(--accent-dim); border-radius:var(--radius);
+    padding:14px 18px; margin-bottom:18px; font-size:.88rem; color:var(--text-dim);
+  }
+  .banner b{color:var(--accent);}
+  .banner .dismiss{
+    float:right; background:none; border:none; color:var(--text-faint); cursor:pointer;
+    font-size:.85rem; text-decoration:underline;
+  }
+
+  label{display:block; font-size:.82rem; color:var(--text-dim); margin:14px 0 5px 0; font-weight:600;}
+  label:first-child{margin-top:0;}
+  input[type=text], textarea, select{
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:9px;
+    color:var(--text); padding:10px 12px; font-size:.92rem; font-family:inherit; resize:vertical;
+  }
+  textarea{min-height:120px;}
+  input[type=text]:focus, textarea:focus, select:focus{outline:1px solid var(--accent);}
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .row > *{flex:1; min-width:160px;}
+
+  button.btn{
+    background:var(--accent); color:#241d10; border:none; border-radius:9px;
+    padding:10px 18px; font-size:.9rem; font-weight:700; cursor:pointer; margin-top:16px;
+  }
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.secondary{
+    background:transparent; color:var(--text-dim); border:1px solid var(--border); font-weight:600;
+  }
+  button.btn.secondary:hover{color:var(--text); border-color:var(--text-dim);}
+  button.btn.danger{background:transparent; color:var(--danger); border:1px solid var(--danger);}
+  button.btn.small{padding:6px 12px; font-size:.8rem; margin-top:0;}
+
+  .stage-badge{
+    display:inline-flex; align-items:center; gap:8px; padding:5px 12px 5px 8px;
+    border-radius:999px; font-size:.82rem; font-weight:700; color:#100e17;
+  }
+  .stage-dot{width:9px; height:9px; border-radius:50%; background:currentColor;}
+
+  .reading{border-left:3px solid var(--accent); padding-left:16px; margin-top:16px;}
+  .reading .stagename{font-size:1.15rem; font-weight:700; margin:8px 0 2px 0;}
+  .reading .human{color:var(--text-dim); font-style:italic; margin-bottom:10px;}
+  details.math{margin-top:14px; font-size:.85rem; color:var(--text-dim);}
+  details.math summary{cursor:pointer; color:var(--accent); font-weight:600;}
+  details.math table{width:100%; border-collapse:collapse; margin-top:10px;}
+  details.math td{padding:4px 6px; border-bottom:1px solid var(--border);}
+  details.math td:first-child{color:var(--text-faint);}
+
+  ul.habits{margin:8px 0 0 0; padding-left:20px; color:var(--text-dim); font-size:.9rem;}
+  ul.habits li{margin-bottom:4px;}
+  .prompt-box{
+    background:var(--card2); border-radius:10px; padding:12px 14px; margin-top:12px;
+    font-style:italic; color:var(--text);
+  }
+
+  .entry{border-top:1px solid var(--border); padding-top:14px; margin-top:14px;}
+  .entry:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .entry .meta{font-size:.78rem; color:var(--text-faint); margin-bottom:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .entry .body{font-size:.9rem; color:var(--text-dim); white-space:pre-wrap;}
+  .entry .note{margin-top:6px; font-size:.85rem; color:var(--text); background:var(--card2); padding:8px 10px; border-radius:8px;}
+  .entry-actions{margin-top:6px;}
+  .entry-actions button{margin-right:8px;}
+
+  .empty{color:var(--text-faint); font-size:.88rem; padding:10px 0;}
+
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:6px; font-size:.8rem;}
+  .bar-row .label{width:150px; color:var(--text-dim); flex-shrink:0;}
+  .bar-track{flex:1; background:var(--bg2); border-radius:6px; height:14px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px;}
+  .bar-row .count{width:24px; text-align:right; color:var(--text-faint);}
+
+  .area-chip{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2);
+    border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:.85rem;
+    cursor:pointer; margin:0 8px 8px 0;
+  }
+  .area-chip.selected{border-color:var(--accent); color:var(--accent);}
+
+  .guide-stage{border-bottom:1px solid var(--border); padding:16px 0;}
+  .guide-stage:last-child{border-bottom:none;}
+  .guide-stage h3{margin:0 0 4px 0; display:flex; align-items:center; gap:10px;}
+
+  .habit-group summary{cursor:pointer; font-weight:700; padding:8px 0; display:flex; align-items:center; gap:8px;}
+  .habit-group{border-bottom:1px solid var(--border); padding:4px 0;}
+  .habit-group:last-child{border-bottom:none;}
+  .habit-check{display:flex; align-items:flex-start; gap:8px; padding:5px 0 5px 20px; font-size:.88rem; color:var(--text-dim);}
+  .habit-check input{margin-top:3px;}
+
+  footer{margin-top:40px; text-align:center; color:var(--text-faint); font-size:.78rem; padding:20px;}
+  footer a{color:var(--text-faint);}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--good); color:#0f1a14; padding:10px 20px; border-radius:999px;
+    font-size:.85rem; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+
+  @media (max-width:520px){
+    .row > *{min-width:100%;}
+    .bar-row .label{width:100px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>🜛 Kairos Reflection Journal</h1>
+    <div class="tagline">A pattern-reflection tool for whatever you bring it — texts, relationships, work, habits, cycles.</div>
+    <nav class="tabs">
+      <button data-tab="home" class="active">Home</button>
+      <button data-tab="scan">Pattern Scan</button>
+      <button data-tab="cycle">Cycle Journal</button>
+      <button data-tab="habits">Habit Log</button>
+      <button data-tab="guide">Stage Guide</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HOME -->
+  <section class="tab active" id="tab-home">
+    <div class="banner" id="disclaimerBanner">
+      <button class="dismiss" onclick="dismissBanner()">hide</button>
+      <b>What this is:</b> an interpretive self-reflection tool — the same category as tarot, the I Ching, or a
+      structured journaling prompt deck. It is <b>not</b> a scientific measurement or prediction tool.
+      <br><br>
+      <b>How the "reading" works:</b> it reduces the word count and letter count of whatever text you enter to a
+      single digit (0–9), the same digit-root arithmetic used throughout this project's Container Rule engine, and
+      maps the result to one of ten named stages. That math will find a "pattern" in <i>any</i> sufficiently long
+      text — Scripture, a grocery list, or random keyboard mashing — with equal reliability. That's a property of
+      modular arithmetic, not evidence about the text. Treat every reading as a writing prompt, not a verdict.
+      <br><br>
+      <b>Your data:</b> everything you enter is stored only in this browser's local storage. Nothing is sent
+      anywhere. Use "Export data" on any journal tab to back it up or move it to another device.
+      <br><br>
+      Not intended for medical, legal, financial, or diagnostic decisions.
+    </div>
+
+    <div class="card">
+      <h2>What you can do here</h2>
+      <p class="lead">Bring anything — a Bible or Quran passage, a paragraph about a relationship, a section of your
+        resume, a note about what you ate today, a description of a recurring argument. The engine doesn't need to
+        know what kind of thing it is; it just reflects the same ten-stage lens back at it, and gives you a prompt
+        to think with.</p>
+      <div class="row">
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('scan')">
+          <b>1. Pattern Scan</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Paste any text or write about any
+            topic. Get a stage reading, the habits typically associated with it, and a reflective prompt. Save it
+            to build a running journal.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('cycle')">
+          <b>2. Cycle Journal</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Track named life areas — a
+            relationship, a job search, a health habit — over time, and see where you keep landing.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('habits')">
+          <b>3. Habit Log</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">A checklist of plain-language habits
+            per stage. Check off what you notice in yourself, and watch which stages recur most.</p>
+        </div>
+      </div>
+      <p style="margin-top:16px;"><a href="#" onclick="switchTab('guide'); return false;">→ Read the Stage Guide</a>
+        first if you want to know what the ten stages mean before you start.</p>
+    </div>
+
+    <div class="card">
+      <h2>Quick stats</h2>
+      <div id="homeStats"></div>
+      <button class="btn secondary small" onclick="exportAll()">Export all data (.json)</button>
+      <button class="btn danger small" onclick="clearAllData()">Clear all data</button>
+    </div>
+  </section>
+
+  <!-- PATTERN SCAN -->
+  <section class="tab" id="tab-scan">
+    <h2>Pattern Scan</h2>
+    <p class="lead">Paste a passage — sacred text, a journal entry, a resume bullet, a description of a fight you
+      had — anything. It gets read through the same ten-stage lens either way.</p>
+
+    <div class="card">
+      <label>Title (optional)</label>
+      <input type="text" id="scanTitle" placeholder="e.g. Psalm 23, or 'the talk with my sister'">
+      <label>Life domain (optional, for your own filing)</label>
+      <select id="scanDomain">
+        <option value="">— unspecified —</option>
+        <option>Sacred / ancient text</option>
+        <option>Relationship</option>
+        <option>Family</option>
+        <option>Work / resume</option>
+        <option>Diet / health</option>
+        <option>Emotional trigger</option>
+        <option>Other</option>
+      </select>
+      <label>Text</label>
+      <textarea id="scanText" placeholder="Paste or write anything here..."></textarea>
+      <button class="btn" onclick="runScan()">Scan</button>
+      <div id="scanResult"></div>
+    </div>
+
+    <h3>Saved entries</h3>
+    <div class="card" id="scanHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('pattern')">Export Pattern Scan entries</button>
+  </section>
+
+  <!-- CYCLE JOURNAL -->
+  <section class="tab" id="tab-cycle">
+    <h2>Cycle Journal</h2>
+    <p class="lead">Name the parts of your life you want to watch over time, then check in on them periodically.
+      This journal counts your own repeated entries plainly — no mysticism, just "you logged Stage 8 four of your
+      last six check-ins here."</p>
+
+    <div class="card">
+      <label>Add a life area</label>
+      <div class="row">
+        <input type="text" id="newAreaName" placeholder="e.g. My marriage, Job search, Eating habits">
+        <button class="btn small" style="margin-top:0" onclick="addArea()">Add area</button>
+      </div>
+      <div id="areaChips" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card" id="checkinCard" style="display:none;">
+      <h3 id="checkinAreaLabel" style="margin-top:0;"></h3>
+      <label>How do you want to check in?</label>
+      <div class="row">
+        <button class="btn secondary small" id="modeTextBtn" onclick="setCheckinMode('text')" style="margin-top:0">Describe it (auto-read)</button>
+        <button class="btn secondary small" id="modeManualBtn" onclick="setCheckinMode('manual')" style="margin-top:0">I already know the stage</button>
+      </div>
+
+      <div id="checkinTextMode">
+        <label>What's going on right now, in this area?</label>
+        <textarea id="checkinText" placeholder="A few sentences about where things stand..."></textarea>
+      </div>
+      <div id="checkinManualMode" style="display:none;">
+        <label>Which stage does this feel like?</label>
+        <select id="checkinManualStage"></select>
+      </div>
+      <label>Note (optional)</label>
+      <input type="text" id="checkinNote" placeholder="Anything you want to remember about this moment">
+      <button class="btn" onclick="saveCheckin()">Save check-in</button>
+      <div id="checkinResult"></div>
+    </div>
+
+    <div id="areaHistoryWrap"></div>
+    <button class="btn secondary small" onclick="exportJournal('cycle')">Export Cycle Journal entries</button>
+  </section>
+
+  <!-- HABIT LOG -->
+  <section class="tab" id="tab-habits">
+    <h2>Habit Log</h2>
+    <p class="lead">Each stage tends to come with its own small, recognizable habits. Check off whatever you notice
+      in yourself right now — you don't have to pick just one stage, since different parts of your life are usually
+      in different places at once.</p>
+
+    <div class="card">
+      <label>Link to a life area (optional)</label>
+      <select id="habitArea"><option value="">— none —</option></select>
+      <div id="habitChecklist"></div>
+      <label>Trigger / note (optional)</label>
+      <input type="text" id="habitNote" placeholder="What set this off, or what you noticed">
+      <button class="btn" onclick="saveHabitLog()">Save habit log</button>
+    </div>
+
+    <h3>What's recurring</h3>
+    <div class="card" id="habitStats"></div>
+
+    <h3>Past logs</h3>
+    <div class="card" id="habitHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('habits')">Export Habit Log entries</button>
+  </section>
+
+  <!-- STAGE GUIDE -->
+  <section class="tab" id="tab-guide">
+    <h2>Stage Guide</h2>
+    <p class="lead">The ten stages this tool uses, in plain language. Use this as a reference for recognizing habits
+      in yourself — not as a diagnosis.</p>
+    <div class="card" id="guideList"></div>
+  </section>
+
+</main>
+
+<footer>
+  Kairos Reflection Journal — a companion interpretive tool for the Kairos / LASE Stanfield's Axiom of Perpetuity project.<br>
+  Runs entirely in your browser. No data leaves this device.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STAGE DATA — plain-language layer over the canonical SAP
+   stage names used across this project (Kairos / LASE).
+   Canonical names are kept for consistency with the rest of
+   the repo; everything else here is written for a general
+   reader doing self-reflection, not a technical audience.
+   ============================================================ */
+const STAGES = [
+  { n:0, canonical:"PLENARA", human:"Open Field",
+    essence:"A pause. Cleared space before or after a cycle, not a stalled one.",
+    habits:[
+      "Taking a break without immediately feeling guilty about it",
+      "Feeling directionless but not distressed by it",
+      "Clearing space before starting something new",
+      "Resisting the urge to fill the silence right away",
+      "A sense of 'nothing yet, and that's fine'"
+    ],
+    prompt:"What are you making room for by not rushing back in?" },
+  { n:1, canonical:"SPARK OF NAVIGATION", human:"Awakening",
+    essence:"A new direction announces itself, fragile and easily talked out of existing.",
+    habits:[
+      "A new idea keeps coming back uninvited",
+      "Feeling excited but unsure how to start",
+      "Talking about the idea more than acting on it yet",
+      "Protecting the idea from early criticism, including your own",
+      "Short bursts of research or journaling about it"
+    ],
+    prompt:"What's the smallest real step that would make this spark undeniable?" },
+  { n:2, canonical:"FORGE OF POLARITY", human:"Forming Identity",
+    essence:"Definition by contrast. You find out what you are partly by finding what you're not.",
+    habits:[
+      "Noticing what you're against as clearly as what you're for",
+      "Setting a boundary and immediately feeling guilty about it",
+      "Comparing yourself to a person or situation you're not",
+      "Testing a relationship or role by pushing against it",
+      "Tension between who you were and who you're becoming"
+    ],
+    prompt:"What boundary are you drawing right now, and who or what is it separating you from?" },
+  { n:3, canonical:"ENGINE OF EXPRESSION", human:"Discipline & Output",
+    essence:"Momentum through repetition. Effort becomes visible, sometimes at the cost of reflection.",
+    habits:[
+      "Leaning hard on routine or discipline",
+      "Producing more but reflecting less",
+      "Irritation when the effort isn't paying off visibly yet",
+      "Using busyness to avoid a harder feeling underneath",
+      "Measuring your worth by output"
+    ],
+    prompt:"What discipline are you leaning on, and what might it be helping you not feel?" },
+  { n:4, canonical:"CRUCIBLE OF EQUILIBRIUM", human:"Testing Ground",
+    essence:"Things hold steady. The open question is whether that's rest or stalling.",
+    habits:[
+      "Things feel stable but a little flat",
+      "Double-checking whether the foundation is actually solid",
+      "Resisting change because 'it's finally working'",
+      "Quietly gathering resources or energy before a next move",
+      "Comparing the current calm to a past storm"
+    ],
+    prompt:"Is this stability restful, or is it stalling?" },
+  { n:5, canonical:"DYNAMO OF WILL", human:"The Choice Point",
+    essence:"A real decision point. The most consequential of the ten stages — advance, freeze, or retreat.",
+    habits:[
+      "Circling the same decision over and over",
+      "Feeling torn between two clearly named paths",
+      "Asking many people for their opinion on it",
+      "Procrastinating on a decision that's already been made emotionally",
+      "Noticing a felt lean toward one option, even unspoken"
+    ],
+    prompt:"If you stopped weighing this and just noticed what you're already leaning toward — what is it?" },
+  { n:6, canonical:"NEXUS OF HARMONY", human:"Integration",
+    essence:"Separate efforts start reinforcing each other. A peak-function stage.",
+    habits:[
+      "Things clicking into place across more than one area at once",
+      "Wanting to teach or share what you've learned",
+      "A pull to consolidate rather than start something new",
+      "Noticing how separate efforts are now reinforcing each other",
+      "A sense of 'this is working' you don't quite trust yet"
+    ],
+    prompt:"What are you ready to pass on to someone else, now that it's working?" },
+  { n:7, canonical:"LENS OF DISTILLATION", human:"Insight & Isolation",
+    essence:"Clarity that outpaces connection. The risk here is isolation, not confusion.",
+    habits:[
+      "Seeing the pattern clearly but feeling alone in seeing it",
+      "Withdrawing to think rather than talking it through",
+      "Journaling more than talking to people about it",
+      "Insight arriving faster than the words to share it",
+      "A subtle sense of being 'ahead' of the people around you"
+    ],
+    prompt:"Who is one person you could actually say this insight out loud to, today?" },
+  { n:8, canonical:"VESSEL OF GROUNDING", human:"The Permanence Trap",
+    essence:"Two chambers: the Illusion of Arrival (this good thing is permanent) and the Illusion of Permanence " +
+      "(this bad thing is permanent). Both are the same trap — mistaking a state for a fact.",
+    habits:[
+      "Insisting 'this is just how it is now,' good or bad",
+      "Defending a conclusion more than the evidence for it",
+      "Feeling either falsely triumphant or falsely stuck",
+      "Resisting new information that would complicate a settled story",
+      "A rigid certainty that doesn't quite match how it feels in your body"
+    ],
+    prompt:"What would you have to admit if this turned out to be temporary?" },
+  { n:9, canonical:"TRANSPARENCY OF THE GUIDE", human:"Dissolution & Handoff",
+    essence:"Grip loosening, for better or worse. A closing stage, not a final one — it feeds back into stage 0.",
+    habits:[
+      "Things loosening their grip, for better or worse",
+      "Wanting to document, teach, or pass on what happened",
+      "A felt readiness to let a chapter close, without a next one lined up",
+      "Reduced need to defend how things turned out",
+      "A pull toward rest before 'starting over'"
+    ],
+    prompt:"What are you ready to let end, even without knowing what starts next?" },
+];
+const stageByN = n => STAGES[n];
+
+// Ported from engine/container_rule_engine.py — kept for the "show the math" panel.
+const MAGNETIC_DRAG = {0:0,1:20,2:15,3:90,4:40,5:60,6:90,7:50,8:100,9:0};
+const FLUX_CLASS = {0:"VOID",1:"SEED",2:"POLARITY_FORGE",3:"MAGNETIC_POLE_POSITIVE",4:"EQUILIBRIUM",
+  5:"THRESHOLD",6:"MAGNETIC_POLE_NEGATIVE",7:"DISTILLATION_DRIFT",8:"HIGH_VOLTAGE_CONTAINMENT",9:"SLIP_STREAM_AXIS"};
+const CANONICAL_PAIRS = {1:[9,1],2:[1,8],3:[2,7],4:[3,6],5:[4,5],6:[5,4],7:[6,3],8:[7,2],9:[8,1]};
+
+function digitalRoot(n){
+  n = Math.abs(Math.trunc(n));
+  if(n===0) return 0;
+  const r = n % 9;
+  return r===0 ? 9 : r;
+}
+
+function stageColor(n){
+  const hue = (n*36)%360;
+  return `hsl(${hue},55%,58%)`;
+}
+
+function computeReading(text){
+  const t = (text||"").trim();
+  const words = t.length ? t.split(/\s+/).filter(Boolean) : [];
+  const letters = (t.match(/\p{L}/gu) || []);
+  const wordCount = words.length, letterCount = letters.length;
+  if(wordCount===0) return null;
+  const content = digitalRoot(wordCount);
+  const container = digitalRoot(letterCount);
+  const sum = content + container;
+  const dr = digitalRoot(sum);
+  const stage = dr; // dr of two 1-9 digits is always 1-9
+  const resonance = dr === 9;
+  const canon = CANONICAL_PAIRS[stage];
+  const onCanonical = canon && canon[0]===content && canon[1]===container;
+  return { wordCount, letterCount, content, container, sum, dr, stage, resonance, onCanonical,
+    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage] };
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORAGE_KEY = "kairos_reflection_journal_v1";
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.warn("Could not load saved data", e); }
+  return { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+}
+let STATE = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(36).slice(2))); }
+function fmtDate(ts){ const d = new Date(ts); return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) + " " + d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); }
+
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 1800);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("active", s.id==="tab-"+name));
+  if(name==="cycle") renderCycleTab();
+  if(name==="habits") renderHabitsTab();
+  if(name==="guide") renderGuide();
+  if(name==="scan") renderScanHistory();
+  if(name==="home") renderHomeStats();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+
+/* ============================================================
+   DISCLAIMER BANNER
+   ============================================================ */
+function dismissBanner(){
+  document.getElementById("disclaimerBanner").style.display="none";
+  localStorage.setItem("kairos_banner_dismissed","1");
+}
+if(localStorage.getItem("kairos_banner_dismissed")) {
+  document.addEventListener("DOMContentLoaded", ()=>{
+    document.getElementById("disclaimerBanner").style.display="none";
+  });
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHomeStats(){
+  const p = STATE.patternEntries.length, a = STATE.areas.length, c = STATE.checkins.length, h = STATE.habitLogs.length;
+  document.getElementById("homeStats").innerHTML = `
+    <div class="row">
+      <div class="card tight"><b>${p}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Pattern Scan entries</span></div>
+      <div class="card tight"><b>${a}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Life areas tracked</span></div>
+      <div class="card tight"><b>${c}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Cycle check-ins</span></div>
+      <div class="card tight"><b>${h}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Habit logs</span></div>
+    </div>`;
+}
+
+function exportAll(){
+  downloadJSON(STATE, "kairos-reflection-journal-all.json");
+}
+function exportJournal(kind){
+  const map = { pattern:"patternEntries", cycle:["areas","checkins"], habits:"habitLogs" };
+  let data;
+  if(kind==="cycle") data = { areas: STATE.areas, checkins: STATE.checkins };
+  else data = { [map[kind]]: STATE[map[kind]] };
+  downloadJSON(data, `kairos-${kind}-journal.json`);
+}
+function downloadJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function clearAllData(){
+  if(confirm("This deletes every entry in all three journals from this browser. This can't be undone. Export first if you want a backup. Continue?")){
+    STATE = { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+    saveState();
+    renderHomeStats(); renderScanHistory(); renderCycleTab(); renderHabitsTab();
+    showToast("All data cleared");
+  }
+}
+
+/* ============================================================
+   PATTERN SCAN
+   ============================================================ */
+function stageBadgeHTML(n){
+  return `<span class="stage-badge" style="background:${stageColor(n)}"><span class="stage-dot"></span>Stage ${n} — ${stageByN(n).canonical}</span>`;
+}
+
+function readingHTML(reading, forEntryId){
+  if(!reading){
+    return `<div class="empty">Enter some text to scan.</div>`;
+  }
+  const s = stageByN(reading.stage);
+  return `
+    <div class="reading">
+      ${stageBadgeHTML(reading.stage)}
+      <div class="stagename">${s.human}</div>
+      <div class="human">${s.essence}</div>
+      <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
+        <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      </div>
+      <div class="prompt-box">${s.prompt}</div>
+      <details class="math">
+        <summary>Show the math</summary>
+        <table>
+          <tr><td>Word count → digit</td><td>${reading.wordCount} → ${reading.content}</td></tr>
+          <tr><td>Letter count → digit</td><td>${reading.letterCount} → ${reading.container}</td></tr>
+          <tr><td>Sum</td><td>${reading.content} + ${reading.container} = ${reading.sum}</td></tr>
+          <tr><td>Digital root (stage)</td><td>${reading.dr}</td></tr>
+          <tr><td>"Harmonic resonance"</td><td>${reading.resonance ? "Yes (digital root = 9)" : "No"}</td></tr>
+          <tr><td>Flux class label</td><td>${reading.flux}</td></tr>
+          <tr><td>Magnetic drag label</td><td>${reading.drag}%</td></tr>
+        </table>
+        <p style="margin-top:8px;">These labels come from this project's own internal vocabulary (the Container
+        Rule engine). They describe the arithmetic, not a property of your text. Any text of similar length lands
+        on a digit-root the same way — "resonance" (digital root 9) shows up whenever the word-digit and
+        letter-digit happen to add to a multiple of 9, which is common by construction, not rare.</p>
+      </details>
+    </div>`;
+}
+
+function runScan(){
+  const text = document.getElementById("scanText").value;
+  const reading = computeReading(text);
+  document.getElementById("scanResult").innerHTML = reading ? (
+    readingHTML(reading) +
+    `<label>Your reflection (optional)</label>
+     <textarea id="scanNote" placeholder="What actually comes up for you, reading this back?"></textarea>
+     <button class="btn" onclick="saveScanEntry()">Save to journal</button>`
+  ) : readingHTML(null);
+}
+
+function saveScanEntry(){
+  const text = document.getElementById("scanText").value;
+  const reading = computeReading(text);
+  if(!reading) return;
+  const entry = {
+    id: uid(), ts: Date.now(),
+    title: document.getElementById("scanTitle").value.trim(),
+    domain: document.getElementById("scanDomain").value,
+    text, reading,
+    note: (document.getElementById("scanNote")?.value || "").trim(),
+  };
+  STATE.patternEntries.unshift(entry);
+  saveState();
+  document.getElementById("scanText").value = "";
+  document.getElementById("scanTitle").value = "";
+  document.getElementById("scanResult").innerHTML = "";
+  renderScanHistory();
+  showToast("Saved to Pattern Scan journal");
+}
+
+function deleteScanEntry(id){
+  STATE.patternEntries = STATE.patternEntries.filter(e=>e.id!==id);
+  saveState(); renderScanHistory();
+}
+
+function renderScanHistory(){
+  const wrap = document.getElementById("scanHistory");
+  if(STATE.patternEntries.length===0){ wrap.innerHTML = `<div class="empty">No saved entries yet.</div>`; return; }
+  wrap.innerHTML = STATE.patternEntries.map(e=>`
+    <div class="entry">
+      <div class="meta">
+        ${stageBadgeHTML(e.reading.stage)}
+        <span>${fmtDate(e.ts)}</span>
+        ${e.domain ? `<span>· ${e.domain}</span>` : ""}
+      </div>
+      ${e.title ? `<b>${escapeHTML(e.title)}</b>` : ""}
+      <div class="body">${escapeHTML(truncate(e.text, 240))}</div>
+      ${e.note ? `<div class="note">${escapeHTML(e.note)}</div>` : ""}
+      <div class="entry-actions">
+        <button class="btn secondary small" onclick="deleteScanEntry('${e.id}')">Delete</button>
+      </div>
+    </div>`).join("");
+}
+
+function escapeHTML(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function truncate(s,n){ return s.length>n ? s.slice(0,n)+"…" : s; }
+
+/* ============================================================
+   CYCLE JOURNAL
+   ============================================================ */
+let selectedAreaId = null;
+let checkinMode = "text";
+
+function addArea(){
+  const input = document.getElementById("newAreaName");
+  const name = input.value.trim();
+  if(!name) return;
+  const area = { id: uid(), name, createdTs: Date.now() };
+  STATE.areas.push(area);
+  saveState();
+  input.value = "";
+  selectedAreaId = area.id;
+  renderCycleTab();
+}
+
+function selectArea(id){
+  selectedAreaId = id;
+  checkinMode = "text";
+  renderCycleTab();
+}
+
+function deleteArea(id){
+  if(!confirm("Delete this life area and all its check-ins?")) return;
+  STATE.areas = STATE.areas.filter(a=>a.id!==id);
+  STATE.checkins = STATE.checkins.filter(c=>c.areaId!==id);
+  if(selectedAreaId===id) selectedAreaId=null;
+  saveState(); renderCycleTab();
+}
+
+function setCheckinMode(mode){
+  checkinMode = mode;
+  document.getElementById("checkinTextMode").style.display = mode==="text" ? "" : "none";
+  document.getElementById("checkinManualMode").style.display = mode==="manual" ? "" : "none";
+  document.getElementById("modeTextBtn").style.borderColor = mode==="text" ? "var(--accent)" : "var(--border)";
+  document.getElementById("modeManualBtn").style.borderColor = mode==="manual" ? "var(--accent)" : "var(--border)";
+}
+
+function saveCheckin(){
+  if(!selectedAreaId) return;
+  let stage, text = "";
+  if(checkinMode==="text"){
+    text = document.getElementById("checkinText").value;
+    const reading = computeReading(text);
+    if(!reading){ showToast("Write a sentence or two first"); return; }
+    stage = reading.stage;
+  } else {
+    stage = parseInt(document.getElementById("checkinManualStage").value, 10);
+  }
+  const checkin = {
+    id: uid(), ts: Date.now(), areaId: selectedAreaId, mode: checkinMode,
+    text, stage, note: document.getElementById("checkinNote").value.trim(),
+  };
+  STATE.checkins.push(checkin);
+  saveState();
+  document.getElementById("checkinText").value = "";
+  document.getElementById("checkinNote").value = "";
+  showToast("Check-in saved");
+  renderCycleTab();
+}
+
+function deleteCheckin(id){
+  STATE.checkins = STATE.checkins.filter(c=>c.id!==id);
+  saveState(); renderCycleTab();
+}
+
+function areaCheckins(areaId){
+  return STATE.checkins.filter(c=>c.areaId===areaId).sort((a,b)=>a.ts-b.ts);
+}
+
+function renderCycleTab(){
+  // area chips
+  const chipsWrap = document.getElementById("areaChips");
+  if(STATE.areas.length===0){
+    chipsWrap.innerHTML = `<div class="empty">Add a life area above to start tracking it.</div>`;
+  } else {
+    chipsWrap.innerHTML = STATE.areas.map(a=>`
+      <span class="area-chip ${a.id===selectedAreaId?'selected':''}" onclick="selectArea('${a.id}')">
+        ${escapeHTML(a.name)} <small style="color:var(--text-faint)">(${areaCheckins(a.id).length})</small>
+      </span>`).join("") +
+      (selectedAreaId ? `<button class="btn danger small" style="margin-left:6px" onclick="deleteArea('${selectedAreaId}')">Delete selected area</button>` : "");
+  }
+
+  const checkinCard = document.getElementById("checkinCard");
+  if(selectedAreaId){
+    const area = STATE.areas.find(a=>a.id===selectedAreaId);
+    checkinCard.style.display = "";
+    document.getElementById("checkinAreaLabel").textContent = "Check in: " + (area ? area.name : "");
+    const sel = document.getElementById("checkinManualStage");
+    if(sel.children.length===0){
+      sel.innerHTML = STAGES.map(s=>`<option value="${s.n}">Stage ${s.n} — ${s.canonical} (${s.human})</option>`).join("");
+    }
+    setCheckinMode(checkinMode);
+  } else {
+    checkinCard.style.display = "none";
+  }
+
+  renderAreaHistory();
+}
+
+function renderAreaHistory(){
+  const wrap = document.getElementById("areaHistoryWrap");
+  if(STATE.areas.length===0){ wrap.innerHTML = ""; return; }
+
+  wrap.innerHTML = STATE.areas.map(area=>{
+    const list = areaCheckins(area.id);
+    if(list.length===0){
+      return `<h3>${escapeHTML(area.name)}</h3><div class="card"><div class="empty">No check-ins yet.</div></div>`;
+    }
+    const recent = list.slice(-8);
+    const freq = {};
+    recent.forEach(c=>freq[c.stage]=(freq[c.stage]||0)+1);
+    const maxStage = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+    let streak = 0;
+    for(let i=list.length-1;i>0;i--){
+      if(list[i].stage===list[i-1].stage) streak++; else break;
+    }
+    const insights = [];
+    if(maxStage && maxStage[1] >= 3){
+      insights.push(`Stage ${maxStage[0]} — ${stageByN(+maxStage[0]).canonical} appears in ${maxStage[1]} of your last ${recent.length} check-ins here.`);
+    }
+    if(streak >= 1){
+      insights.push(`You've logged the same stage ${streak+1} check-ins in a row.`);
+    }
+    return `
+      <h3>${escapeHTML(area.name)}</h3>
+      <div class="card">
+        ${insights.length ? `<div class="banner" style="margin-bottom:14px;">${insights.join("<br>")}</div>` : ""}
+        ${list.slice().reverse().map(c=>`
+          <div class="entry">
+            <div class="meta">
+              ${stageBadgeHTML(c.stage)}
+              <span>${fmtDate(c.ts)}</span>
+              <span>· ${c.mode==="manual"?"self-selected":"from text"}</span>
+            </div>
+            ${c.text ? `<div class="body">${escapeHTML(truncate(c.text,200))}</div>` : ""}
+            ${c.note ? `<div class="note">${escapeHTML(c.note)}</div>` : ""}
+            <div class="entry-actions"><button class="btn secondary small" onclick="deleteCheckin('${c.id}')">Delete</button></div>
+          </div>`).join("")}
+      </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   HABIT LOG
+   ============================================================ */
+function renderHabitChecklist(){
+  const el = document.getElementById("habitChecklist");
+  el.innerHTML = STAGES.map(s=>`
+    <details class="habit-group">
+      <summary><span class="stage-dot" style="color:${stageColor(s.n)}"></span> Stage ${s.n} — ${s.canonical} <span style="color:var(--text-faint);font-weight:400">(${s.human})</span></summary>
+      ${s.habits.map((h,i)=>`
+        <label class="habit-check">
+          <input type="checkbox" value="s${s.n}_h${i}" data-stage="${s.n}">
+          <span>${h}</span>
+        </label>`).join("")}
+    </details>`).join("");
+}
+
+function renderHabitAreaSelect(){
+  const sel = document.getElementById("habitArea");
+  sel.innerHTML = `<option value="">— none —</option>` +
+    STATE.areas.map(a=>`<option value="${a.id}">${escapeHTML(a.name)}</option>`).join("");
+}
+
+function saveHabitLog(){
+  const checked = Array.from(document.querySelectorAll("#habitChecklist input:checked"));
+  if(checked.length===0){ showToast("Check at least one habit"); return; }
+  const log = {
+    id: uid(), ts: Date.now(),
+    areaId: document.getElementById("habitArea").value || null,
+    habits: checked.map(c=>({ id:c.value, stage: parseInt(c.dataset.stage,10) })),
+    note: document.getElementById("habitNote").value.trim(),
+  };
+  STATE.habitLogs.unshift(log);
+  saveState();
+  checked.forEach(c=>c.checked=false);
+  document.getElementById("habitNote").value = "";
+  showToast("Habit log saved");
+  renderHabitsTab();
+}
+
+function deleteHabitLog(id){
+  STATE.habitLogs = STATE.habitLogs.filter(l=>l.id!==id);
+  saveState(); renderHabitsTab();
+}
+
+function renderHabitStats(){
+  const el = document.getElementById("habitStats");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">Log a few entries to see which stages recur most.</div>`; return; }
+  const tally = new Array(10).fill(0);
+  STATE.habitLogs.forEach(l=>l.habits.forEach(h=>tally[h.stage]++));
+  const max = Math.max(...tally, 1);
+  el.innerHTML = STAGES.map(s=>`
+    <div class="bar-row">
+      <div class="label">Stage ${s.n} — ${s.human}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(tally[s.n]/max*100)}%; background:${stageColor(s.n)}"></div></div>
+      <div class="count">${tally[s.n]}</div>
+    </div>`).join("");
+}
+
+function renderHabitHistory(){
+  const el = document.getElementById("habitHistory");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">No habit logs yet.</div>`; return; }
+  el.innerHTML = STATE.habitLogs.map(l=>{
+    const area = STATE.areas.find(a=>a.id===l.areaId);
+    return `
+      <div class="entry">
+        <div class="meta">
+          <span>${fmtDate(l.ts)}</span>
+          ${area ? `<span>· ${escapeHTML(area.name)}</span>` : ""}
+        </div>
+        <div class="body">${l.habits.map(h=>stageBadgeHTML(h.stage)).join(" ")}</div>
+        ${l.note ? `<div class="note">${escapeHTML(l.note)}</div>` : ""}
+        <div class="entry-actions"><button class="btn secondary small" onclick="deleteHabitLog('${l.id}')">Delete</button></div>
+      </div>`;
+  }).join("");
+}
+
+function renderHabitsTab(){
+  renderHabitChecklist();
+  renderHabitAreaSelect();
+  renderHabitStats();
+  renderHabitHistory();
+}
+
+/* ============================================================
+   STAGE GUIDE
+   ============================================================ */
+function renderGuide(){
+  document.getElementById("guideList").innerHTML = STAGES.map(s=>`
+    <div class="guide-stage">
+      <h3>${stageBadgeHTML(s.n)} <span style="color:var(--text-dim); font-weight:400;">${s.human}</span></h3>
+      <p style="color:var(--text-dim); margin:4px 0 8px 0;">${s.essence}</p>
+      <b style="font-size:.85rem; color:var(--text-dim)">Habits to watch for:</b>
+      <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      <div class="prompt-box">${s.prompt}</div>
+    </div>`).join("");
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderHomeStats();
+if(localStorage.getItem("kairos_banner_dismissed")){
+  document.getElementById("disclaimerBanner").style.display="none";
+}
+</script>
+</body>
+</html>
