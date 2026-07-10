@@ -68,6 +68,40 @@ Descent and ascent are not sequential. They are the same motion happening simult
 
 ---
 
+## The Tumbling Inversion engine is real code, not copy
+
+Every `/analyze` and `/reading` response includes a `tumbling_inversion` block. This is not
+descriptive language layered on top of a reading — it's the actual Tumbling Inversion Principle
+(Stanfield's Axiom of Perceived Perpetuity / `TUMBLING_INVERSION_v8.2.md`) running as deterministic
+code against the NSDT vector for that reading, ported from and verified against the user's own
+`tumbling_inversion.py` and `test_tumbling_inversion.py` (all 25 of the original tests pass
+unmodified against this implementation — see `sap_kairos_tumbling_inversion.py`).
+
+| Field | What it is |
+|---|---|
+| `parity` | `even` / `odd` / `boundary` — even stages (2,4,6,8) are Physically Stable / Consciously Unstable; odd stages (1,3,5,7,9) are Physically Unstable / Consciously Stable. This alternation is the mechanism of forward motion, not a flaw — picture a cylinder rolling down a slope, alternating between resting on a face and tumbling over its edge. |
+| `physical_stability`, `consciousness_stability` | 0–100, computed from the NSDT vector (see `docs/NSDT_REFERENCE.md`). |
+| `divergence`, `divergence_category` | Gap between the Revealed Self (projected stability) and the Concealed Self (actual tension carried) — the same gap the Stage 8 Gratitude Mechanism exists to close. |
+| `geometric_form` | The stage's canonical geometric form (Point, Line, Triangle, Square, Perpendicular Axis, Hexagon, Heptagon, Octagon, Nonagon, Circle). |
+| `arc_direction`, `arc_confidence` | `ascending` / `descending` / `plateau` / `indeterminate`, computed from recent NSDT history on the session (`< 2` history points is always `indeterminate`). |
+| `middle_path_accessed`, `witness_score` | Stage 5's Middle Path Gateway (`witness_score > 50`). **Sticky on the session once accessed** — per the framework's own claim, a conscious choice at Stage 5 reorganizes every remaining stage in that session's cycle, not just the moment it happens. |
+| `stage_paradox` | Populated only at Stages 6, 7, 8 — the Conductor's Paradox (Sustainable vs. Brittle Flow), the Individuation Crucible (Conscious Distillation vs. Chaotic Collapse, plus shadow-surfacing detection), or the Crystallization Paradox (the Gratitude Mechanism engaging or Shattering). |
+| `disruption_loop` | Populated when the existing 8→7→8 / repeated-alternation detector fires — maps to the **Wrath** Stage Disruption Loop. See `docs/STAGE_DISRUPTION_LOOPS.md` for all seven (Pride, Greed, Lust, Envy, Gluttony, Wrath, Sloth), ported from the SAPP corpus's reframing of the Seven Deadly Sins as self-perpetuating stage loops with an "ascending antidote" each. |
+
+For `/reading` (the consumer AI reading), the NSDT vector isn't submitted directly — it's estimated
+by Claude from the reader's own text (`sap_kairos_nsdt_estimator.py`), kept blind to stage names and
+Tumbling Inversion thresholds so it can't reverse-engineer a "convenient" vector, then run through
+the exact same engine as `/analyze`. The AI-generated narrative is then written *on top of* that
+real computed state (see `generate_ai_reading()` in `sap_kairos_ai_reading.py`) — Claude explains
+what the math found, it doesn't invent its own version of it.
+
+See [`docs/NSDT_REFERENCE.md`](docs/NSDT_REFERENCE.md) for the confirmed axis definitions (and a
+documented, real inconsistency: the *stage classifier* that picks `dominant_stage` still runs on an
+older, unconfirmed axis guess — read that doc before assuming every field in a response carries the
+same confidence).
+
+---
+
 ## API Endpoints
 
 | Method | Endpoint | Description |
@@ -83,7 +117,9 @@ Descent and ascent are not sequential. They are the same motion happening simult
 ---
 
 > See [`docs/NSDT_REFERENCE.md`](docs/NSDT_REFERENCE.md) for what the 5-element `nsdt` vector means, including
-> which parts are confirmed by code vs. best-effort inference that still needs sign-off.
+> which parts are confirmed by code vs. best-effort inference that still needs sign-off, and
+> [`docs/STAGE_DISRUPTION_LOOPS.md`](docs/STAGE_DISRUPTION_LOOPS.md) for the seven Stage Disruption Loops
+> referenced by the `disruption_loop` field below.
 
 ## Example Request
 
@@ -113,6 +149,24 @@ curl -X POST http://localhost:8002/analyze \
   "coaching_response": "The certainty that this will not end is itself the trap — not your suffering, but your conclusion about its duration. What would it mean to hold the feeling without the verdict?",
   "journal_prompt": "What would you lose if you let go of the need to know how long this lasts?",
   "tumbling_inversion_note": "Descent and ascent are the same motion. You are not waiting for the return arc. You are already on it.",
+  "tumbling_inversion": {
+    "parity": "even",
+    "physical_stability": 71.0,
+    "consciousness_stability": 75.0,
+    "divergence": 30.0,
+    "divergence_category": "moderate",
+    "geometric_form": "Octagon",
+    "arc_direction": "ascending",
+    "arc_confidence": 62.5,
+    "middle_path_accessed": true,
+    "witness_score": 58.0,
+    "stage_paradox": {
+      "trajectory": "dissolution",
+      "gratitude_engaged": true,
+      "directive": "..."
+    },
+    "disruption_loop": null
+  },
   "session": {
     "total_snapshots": 3,
     "regression_count_8_to_7": 1,
@@ -120,6 +174,9 @@ curl -X POST http://localhost:8002/analyze \
   }
 }
 ```
+
+`tumbling_inversion` is the real, computed engine output — see "The Tumbling Inversion engine is
+real code, not copy" above for what each field means.
 
 `chamber` and `trap_score_amplifier` are only populated when `dominant_stage == 8` (`null` otherwise). Chamber
 classification is a first-pass, disclosed heuristic — see the docstring on `classify_stage8_chamber()` in
@@ -244,8 +301,11 @@ every time, grounded in what you actually wrote.
 Other additions on top of the base journal:
 
 - **"Ask Kairos to go deeper"** — one tap on any reading sends the stage (already decided by the local
-  digit-root math) and your text to `POST /reading`, and renders back the narrative, the Trickster Take,
-  the story/quote parallel, and 1-2 follow-up questions.
+  digit-root math -- that entry mechanic stays as-is, it's the game) and your text to `POST /reading`.
+  The backend estimates an NSDT vector from your text and runs it through the real Tumbling Inversion
+  engine (same math as `/analyze` -- see "The Tumbling Inversion engine is real code, not copy" above),
+  then writes the narrative, Trickster Take, story/quote parallel, and 1-2 follow-up questions grounded
+  in that real computed state, not invented independently of it.
 - **Follow-up thread** — tapping a follow-up question opens a short reply box; your answer goes to
   `POST /reading/elaborate` along with the thread so far, and Kairos responds in place. Nothing is stored
   server-side — the browser holds the thread and resends it each time.

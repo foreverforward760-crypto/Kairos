@@ -85,10 +85,24 @@ def _validate_reading_response(data: Dict[str, Any]) -> Dict[str, Any]:
 READING_SYSTEM_PROMPT = """You write for Kairos, an app where people paste a piece of text -- a journal \
 entry, a passage, a description of a situation, literally anything -- and get it read through a \
 ten-stage cycle. You are given the stage that's already been determined (you do not choose or \
-second-guess it) and the text the reader submitted. Your job is to write the human, personalized \
-layer on top of that stage: a short narrative, a real parallel (a genuine story, quote, myth, \
-historical moment, or pop-culture reference -- something real, not invented, and actually apt), a \
-"Trickster Take," and one or two follow-up questions.
+second-guess it), the text the reader submitted, and the REAL, already-computed Tumbling Inversion \
+state for that text -- physical stability, consciousness stability, the divergence between them, \
+the arc direction, whether the Middle Path has been accessed, and (for stages 6-8) which paradox \
+mode was classified. These numbers are not decoration and not yours to override or re-derive -- they \
+came out of the actual formulas, run on an NSDT vector estimated from this same text. Your job is to \
+write the human, personalized layer that explains what that computed state actually means for this \
+specific reader: a short narrative, a real parallel (a genuine story, quote, myth, historical moment, \
+or pop-culture reference -- something real, not invented, and actually apt), a "Trickster Take," and \
+one or two follow-up questions.
+
+Use the computed state as the spine of the narrative, not as trivia to mention. If physical stability \
+and consciousness stability diverge a lot, say what that divergence looks like in THEIR words, not \
+in framework jargon (avoid dumping raw term names like "Revealed Self" at the reader unless it's \
+doing real explanatory work). If the Middle Path is already accessed, let that inform the tone -- the \
+reading can acknowledge a steadiness that's already present rather than treating the moment as pure \
+crisis. If a stage paradox mode was classified (sustainable/brittle flow, distillation/collapse, \
+gratitude/shattering), that classification is the actual content of the reading for that stage, not \
+a footnote.
 
 The Trickster Take is the signature feature of this app. Write it in the voice of the given \
 trickster figure (Coyote, Anansi, Loki, Br'er Rabbit, or Eshu) -- these are mythic tricksters known \
@@ -104,7 +118,7 @@ in the body text -- the app handles disclosure elsewhere.
 
 Respond with ONLY a JSON object, no other text, in exactly this shape:
 {
-  "narrative": "2-4 sentences, personalized to their specific text, in plain warm language",
+  "narrative": "2-4 sentences, personalized to their specific text, grounded in the real computed state",
   "trickster_take": "1-3 sentences in the trickster's voice, funny and perspective-shifting",
   "parallel": "a real quote, story, myth, or example that genuinely parallels their situation",
   "parallel_source": "who/where the parallel is from, e.g. 'Rumi' or 'the myth of Icarus'",
@@ -112,11 +126,38 @@ Respond with ONLY a JSON object, no other text, in exactly this shape:
 }"""
 
 
+def _describe_tumbling_state(tumbling_inversion: Optional[Dict[str, Any]]) -> str:
+    """Render the real computed Tumbling Inversion state as plain facts for
+    the prompt -- the model explains these numbers, it does not invent them."""
+    if not tumbling_inversion:
+        return "(no computed Tumbling Inversion state available for this reading)"
+
+    lines = [
+        f"Parity: {tumbling_inversion.get('parity')}",
+        f"Physical stability: {tumbling_inversion.get('physical_stability')}/100",
+        f"Consciousness stability: {tumbling_inversion.get('consciousness_stability')}/100",
+        f"Divergence between them: {tumbling_inversion.get('divergence')}/100 "
+        f"({tumbling_inversion.get('divergence_category')})",
+        f"Geometric form: {tumbling_inversion.get('geometric_form')}",
+        f"Arc direction: {tumbling_inversion.get('arc_direction')} "
+        f"(confidence {tumbling_inversion.get('arc_confidence')})",
+        f"Middle Path accessed: {tumbling_inversion.get('middle_path_accessed')}",
+    ]
+    stage_paradox = tumbling_inversion.get("stage_paradox")
+    if stage_paradox:
+        lines.append(f"Stage paradox classification: {json.dumps(stage_paradox)}")
+    disruption_loop = tumbling_inversion.get("disruption_loop")
+    if disruption_loop:
+        lines.append(f"Disruption loop pattern detected: {json.dumps(disruption_loop)}")
+    return "\n".join(lines)
+
+
 def generate_ai_reading(
     stage: int,
     canonical_name: str,
     text: str,
     domain: Optional[str] = None,
+    tumbling_inversion: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     if not is_ai_readings_configured():
         raise AIReadingError("AI readings are not enabled on this server.")
@@ -130,6 +171,8 @@ def generate_ai_reading(
         f"Stage hook: {hook}\n"
         f"Trickster voice to write in: {voice}\n"
         f"Life domain the reader tagged (may be blank): {domain or 'unspecified'}\n\n"
+        f"Real computed Tumbling Inversion state for this text:\n"
+        f"{_describe_tumbling_state(tumbling_inversion)}\n\n"
         f"Reader's text:\n\"\"\"\n{text[:4000]}\n\"\"\""
     )
 

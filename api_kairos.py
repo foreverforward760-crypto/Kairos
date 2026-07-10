@@ -60,6 +60,15 @@ from sap_kairos_ai_reading import (
     is_ai_readings_configured,
 )
 from sap_kairos_public_content import DATA_HANDLING_NOTE
+from sap_kairos_tumbling_inversion import compute_inversion, compute_arc_direction, divergence_category
+from sap_kairos_stage_paradox import (
+    detect_middle_path,
+    classify_flow_quality,
+    classify_crucible_mode,
+    classify_crystallization,
+)
+from sap_kairos_disruption_loops import loop_for_cynical_pattern
+from sap_kairos_nsdt_estimator import estimate_nsdt_from_text, NSDTEstimateError
 
 # --- Configuration (env-driven, all backwards-compatible defaults) ---
 KAIROS_STORAGE_BACKEND = os.environ.get("KAIROS_STORAGE_BACKEND", "memory")
@@ -120,6 +129,7 @@ class ReadingInput(BaseModel):
     canonical_name: str
     text: str
     domain: Optional[str] = None
+    system_id: Optional[str] = None
 
     @field_validator('text')
     @classmethod
@@ -185,6 +195,70 @@ def generate_coaching_response(stage: int, trap_energy: float, journal_entry: Op
     return "Trust the process. The stage you are in is exactly where you need to be."
 
 
+def _to_tumbling_scale(vec: list[float]) -> list[float]:
+    """Rescale an NSDT vector from this API's public 0-10 input contract to
+    the 0-100 scale the canonical Tumbling Inversion formulas are written
+    against (every threshold in TUMBLING_INVERSION_v8.2.md and the user's
+    own test suite -- 50, 70, 55, 60, 100-T, etc. -- is calibrated for 0-100).
+    Keeping /analyze and /reading on 0-10 preserves the existing public
+    contract and matches what sap_kairos_ai_scoring.py already asks Claude
+    to produce; this is the one seam where that gets bridged into the
+    framework's native scale.
+    """
+    return [v * 10.0 for v in vec]
+
+
+def compute_tumbling_inversion_state(nsdt: list[float], dominant_stage: int, session: KairosSession, cynical_loop: bool) -> dict:
+    """The real Tumbling Inversion computation for a reading -- this is the
+    framework itself running as code, not descriptive text. See
+    sap_kairos_tumbling_inversion.py and sap_kairos_stage_paradox.py.
+
+    `nsdt` arrives on this API's public 0-10 scale; it's rescaled to the
+    framework's native 0-100 scale before any Tumbling Inversion math runs.
+
+    Stage 5's Middle Path Gateway is sticky on the session once accessed
+    (mutates `session`, matching the framework's own claim that a conscious
+    choice at Stage 5 reorganizes every remaining stage in the cycle, not
+    just the moment it happens).
+    """
+    nsdt_100 = _to_tumbling_scale(nsdt)
+    history_100 = [_to_tumbling_scale(v) for v in session.get_nsdt_history(limit=4)] + [nsdt_100]
+
+    inv = compute_inversion(nsdt_100, dominant_stage)
+
+    mp = detect_middle_path(nsdt_100)
+    if dominant_stage == 5 and mp["middle_path_accessed"]:
+        session.mark_middle_path_accessed()
+    middle_path_accessed = session.middle_path_accessed
+
+    arc_direction, arc_confidence = compute_arc_direction(history_100)
+
+    stage_paradox = None
+    if dominant_stage == 6:
+        stage_paradox = classify_flow_quality(nsdt_100, middle_path_accessed)
+    elif dominant_stage == 7:
+        stage_paradox = classify_crucible_mode(nsdt_100, middle_path_accessed, nsdt_history=history_100)
+    elif dominant_stage == 8:
+        stage_paradox = classify_crystallization(nsdt_100, middle_path_accessed, nsdt_history=history_100)
+
+    disruption_loop = loop_for_cynical_pattern() if cynical_loop else None
+
+    return {
+        "parity": inv.parity,
+        "physical_stability": inv.physical_stability,
+        "consciousness_stability": inv.consciousness_stability,
+        "divergence": inv.divergence,
+        "divergence_category": divergence_category(inv.divergence),
+        "geometric_form": inv.geometric_form,
+        "arc_direction": arc_direction,
+        "arc_confidence": arc_confidence,
+        "middle_path_accessed": middle_path_accessed,
+        "witness_score": mp["witness_score"],
+        "stage_paradox": stage_paradox,
+        "disruption_loop": disruption_loop,
+    }
+
+
 @app.post("/analyze", dependencies=[Depends(require_api_key)])
 def analyze_kairos(inp: KairosInput):
     engine = KairosBayesian(
@@ -200,6 +274,11 @@ def analyze_kairos(inp: KairosInput):
     x = np.array(inp.nsdt)
     result = engine.forward(x)
 
+    regression_count = session.get_regression_count()
+    cynical_loop = session.detect_cynical_loop()
+
+    tumbling_inversion = compute_tumbling_inversion_state(inp.nsdt, result["dominant_stage"], session, cynical_loop)
+
     snapshot = KairosSnapshot(
         timestamp=time.time(),
         dominant_stage=result["dominant_stage"],
@@ -209,11 +288,10 @@ def analyze_kairos(inp: KairosInput):
         therapeutic_note=result["therapeutic_note"],
         somatic_invitation=result["somatic_invitation"],
         trickster_wisdom=result["trickster_wisdom"],
+        nsdt=inp.nsdt,
     )
     session.add_snapshot(snapshot)
 
-    regression_count = session.get_regression_count()
-    cynical_loop = session.detect_cynical_loop()
     coaching = generate_coaching_response(result["dominant_stage"], result["trap_energy"], inp.journal_entry)
 
     journal_prompt = None
@@ -226,6 +304,7 @@ def analyze_kairos(inp: KairosInput):
 
     result.update({
         "system_id": inp.system_id,
+        "tumbling_inversion": tumbling_inversion,
         "session": {
             "total_snapshots": len(session.snapshots),
             "regression_count_8_to_7": regression_count,
@@ -287,11 +366,22 @@ def score_nsdt(inp: ScoreNSDTInput):
 def get_ai_reading(inp: ReadingInput):
     """AI-deepened, consumer-facing reading (see sap_kairos_ai_reading.py).
 
-    The stage is decided BEFORE this endpoint is called -- by the caller's
-    own deterministic arithmetic (the webapp's digit-root engine) or by
-    /analyze. This endpoint only generates the narrative layer on top of an
-    already-fixed stage: a short personalized narrative, a real story/quote
-    parallel, a Trickster Take, and 1-2 follow-up questions.
+    The STAGE NUMBER (0-9) is decided before this endpoint is called -- by
+    the caller's own digit-root arithmetic on the submitted text, the app's
+    intentional "find a pattern in literally anything" entry mechanic. That
+    part stays as-is; it's the game, not a measurement.
+
+    Everything downstream of that number is now the real engine, not
+    narrative invention: this endpoint estimates an NSDT vector from the
+    same text (sap_kairos_nsdt_estimator.py, blind to stage taxonomy), runs
+    it through the actual Tumbling Inversion + stage paradox math
+    (compute_tumbling_inversion_state -- the same function /analyze uses),
+    and only then asks Claude to write the human-readable narrative *on top
+    of* that computed state, not instead of it.
+
+    If `system_id` is provided, the reading shares session history with
+    that system's /analyze calls (arc direction, sticky Middle Path). If
+    omitted, an ephemeral in-memory-only session is used for this one call.
 
     Disabled unless the operator has set KAIROS_ENABLE_AI_READINGS=true and
     ANTHROPIC_API_KEY.
@@ -304,11 +394,45 @@ def get_ai_reading(inp: ReadingInput):
                 "Set KAIROS_ENABLE_AI_READINGS=true and ANTHROPIC_API_KEY to enable it."
             ),
         )
+
+    if inp.system_id:
+        session = get_or_create_session(inp.system_id)
+    else:
+        session = KairosSession(f"_ephemeral_reading_{id(inp)}", storage_backend="memory")
+
     try:
-        result = generate_ai_reading(inp.stage, inp.canonical_name, inp.text, inp.domain)
+        nsdt_estimate = estimate_nsdt_from_text(inp.text)
+    except NSDTEstimateError as e:
+        raise HTTPException(status_code=502, detail=f"NSDT estimation failed: {e}")
+
+    cynical_loop = session.detect_cynical_loop()
+    tumbling_inversion = compute_tumbling_inversion_state(
+        nsdt_estimate["nsdt"], inp.stage, session, cynical_loop
+    )
+
+    if inp.system_id:
+        session.add_snapshot(KairosSnapshot(
+            timestamp=time.time(),
+            dominant_stage=inp.stage,
+            expected_stage=float(inp.stage),
+            entropy=0.0,
+            trap_energy=0.0,
+            therapeutic_note="",
+            somatic_invitation="",
+            trickster_wisdom="",
+            nsdt=nsdt_estimate["nsdt"],
+        ))
+
+    try:
+        result = generate_ai_reading(
+            inp.stage, inp.canonical_name, inp.text, inp.domain,
+            tumbling_inversion=tumbling_inversion,
+        )
     except AIReadingError as e:
         raise HTTPException(status_code=502, detail=str(e))
     result["disclosure"] = DATA_HANDLING_NOTE
+    result["tumbling_inversion"] = tumbling_inversion
+    result["nsdt_estimate"] = nsdt_estimate
     return result
 
 
