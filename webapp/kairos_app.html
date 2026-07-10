@@ -807,6 +807,119 @@ const MICRO_FLAVOR = {
   9:"Transparency — the release point within this stage",
 };
 
+// Per-stage micro flavor: the generic MICRO_FLAVOR table above stays as a
+// neutral legend (used in the manual check-in dropdown), but the actual
+// Pattern Scan reading uses this richer table instead -- the same micro
+// digit (0-9) reads differently depending on which of the 10 stages it's
+// inside, so two scans landing on "micro 8" at Stage 2 vs Stage 7 get
+// distinct, stage-appropriate language instead of one repeated phrase.
+const MICRO_FLAVOR_BY_STAGE = {
+  0:{0:"Even the opening itself is nearly wordless right now — that fits an open field.",
+     1:"The stillness is just starting to loosen — notice the first flicker of an idea before you chase it.",
+     2:"Some shape is forming inside the openness, but it's not urgent yet — let it keep forming.",
+     3:"You're pushing at the edges of the pause, testing whether it's really over.",
+     4:"The rest has nearly found its natural length — you're close to knowing when to move.",
+     5:"This is the pivot inside the pause itself: keep resting, or let something back in.",
+     6:"You've quietly decided the pause is ending, even if nothing's been said yet.",
+     7:"The stillness is loosening its hold — words and plans are starting to want back in.",
+     8:"Watch for gripping the emptiness itself, defending the pause past its useful point.",
+     9:"This clearing is fully transparent — nothing is being held onto, nothing is being rushed."},
+  1:{0:"The spark hasn't found words yet — that's normal this early.",
+     1:"First movement of the idea — barely more than a flicker, and that's enough for now.",
+     2:"The idea is taking a rough shape, even if you can't fully explain it yet.",
+     3:"You're pushing the idea further than a passing thought — it's starting to want action.",
+     4:"The spark has nearly settled into something you could actually name out loud.",
+     5:"Threshold point: say the idea out loud, or let it stay private a little longer.",
+     6:"Past the pivot — you've already started treating the idea as real, whether or not you've admitted it.",
+     7:"The grip of secrecy is loosening; you're more willing to let others see the spark.",
+     8:"Watch for gripping the idea too tightly to protect it from any feedback at all.",
+     9:"Full transparency — the spark is out in the open now, for better or worse."},
+  2:{0:"The contrast you're drawing hasn't been named yet, only felt.",
+     1:"First movement toward a boundary — you're starting to notice what you're not.",
+     2:"The shape of the 'no' is forming faster than the shape of the 'yes' right now.",
+     3:"You're pushing the boundary further, testing how firm it actually is.",
+     4:"The distinction is nearly settled — you mostly know what side you're on.",
+     5:"Threshold: hold the line, or let the boundary soften.",
+     6:"Past the pivot — you've committed to the distinction, even under pressure.",
+     7:"The tension is loosening as the boundary stops needing constant defense.",
+     8:"Watch for gripping the boundary itself, turning a useful line into a wall.",
+     9:"The line is fully visible now, not hidden behind comparison anymore."},
+  3:{0:"The routine hasn't been named yet — just repeated motion, no story around it.",
+     1:"First movement of momentum — a small repeated action starting to add up.",
+     2:"The routine is taking shape into something you could describe as a system.",
+     3:"You're pushing the output further, adding more reps before questioning any of it.",
+     4:"The discipline has nearly settled into identity — 'this is just what I do.'",
+     5:"Threshold: keep pushing output, or make space to ask what it's actually for.",
+     6:"Past the pivot — you're committed to the routine, whether or not it's still serving you.",
+     7:"The grip of busyness is loosening enough to let a real feeling through.",
+     8:"Watch for gripping the routine itself, using it to avoid what's underneath.",
+     9:"The effort is transparent now — you can see clearly what it has and hasn't been doing for you."},
+  4:{0:"The calm hasn't been tested yet, so it hasn't been named stable or stalled.",
+     1:"First movement inside the stillness — a small check on whether the foundation holds.",
+     2:"The stability is taking a more definite shape, less improvised than before.",
+     3:"You're pushing on the calm a little, seeing what, if anything, moves.",
+     4:"This has nearly settled into a genuinely steady state, not a held breath.",
+     5:"Threshold: name it rest, or admit it's stalling.",
+     6:"Past the pivot — you've decided, at least for now, that the calm is real.",
+     7:"The watchfulness is loosening; you're trusting the stability a little more.",
+     8:"Watch for gripping the calm itself, refusing any change that might disturb it.",
+     9:"The stability is fully transparent now — you can see plainly whether it's rest or stall."},
+  5:{0:"The decision hasn't been put into words yet, only felt as pressure.",
+     1:"First movement toward a side — a faint lean, not a choice yet.",
+     2:"One option is taking clearer shape than the other, even if you haven't said so.",
+     3:"You're pushing the deliberation further, gathering more input before committing.",
+     4:"The choice has nearly settled — you likely already know, underneath the weighing.",
+     5:"This is the threshold inside the threshold: the exact moment before deciding.",
+     6:"Past the pivot — some part of you has already chosen, whatever the calendar says.",
+     7:"The indecision is loosening; committing is starting to feel more possible than avoiding.",
+     8:"Watch for gripping the deliberation itself, using more analysis to avoid the decision.",
+     9:"The choice is fully transparent — you can say plainly, out loud, which way you're going."},
+  6:{0:"The connections between efforts haven't been named yet, only sensed.",
+     1:"First movement of things reinforcing each other — small, easy to miss.",
+     2:"A pattern of things working together is taking real shape.",
+     3:"You're pushing the integration further, connecting more pieces on purpose.",
+     4:"The harmony has nearly settled into something you could rely on.",
+     5:"Threshold: consolidate what's working, or keep chasing more pieces to add.",
+     6:"Past the pivot — you're actively building on what's already reinforcing itself.",
+     7:"The urge to control every piece is loosening as the system holds itself up.",
+     8:"Watch for gripping the current configuration too tightly to let it keep evolving.",
+     9:"What's working is fully visible now — clear enough to teach to someone else."},
+  7:{0:"The insight hasn't found words yet, only a felt sense of seeing something.",
+     1:"First movement of clarity — the beginning of noticing a pattern.",
+     2:"The pattern is taking a more definite shape, sharpening as you look at it.",
+     3:"You're pushing the thinking further, refining the insight past its first form.",
+     4:"The insight has nearly settled into something you could explain simply.",
+     5:"Threshold: keep refining alone, or bring someone else into the thinking.",
+     6:"Past the pivot — you've mostly decided to say something, even if it's not polished.",
+     7:"The withdrawal is loosening; talking about it is starting to feel less risky.",
+     8:"Watch for gripping the isolation itself, mistaking distance for depth.",
+     9:"The insight is fully transparent now — clear enough to say to someone out loud."},
+  8:{0:"The conclusion hasn't been stated yet, only assumed.",
+     1:"First movement toward certainty — a story starting to harden around what happened.",
+     2:"The story is taking a more fixed shape, whether or not the evidence has changed.",
+     3:"You're pushing the certainty further, defending the conclusion more than examining it.",
+     4:"The belief has nearly settled into 'this is just how it is.'",
+     5:"Threshold: hold the conclusion as fixed, or let new information back in.",
+     6:"Past the pivot — the story has mostly hardened, for better or worse.",
+     7:"The grip is loosening slightly; a little more room for doubt is getting in.",
+     8:"Watch for gripping the certainty itself — this is the trap this stage is named for.",
+     9:"The trap is fully visible now — you can see the grip clearly enough to loosen it."},
+  9:{0:"The ending hasn't been named yet, only sensed as a loosening.",
+     1:"First movement of release — the earliest sign that a chapter is closing.",
+     2:"The shape of the ending is becoming clearer, even without a plan after it.",
+     3:"You're pushing the closing further along, tying up more loose ends.",
+     4:"The release has nearly settled — you're close to being able to say it out loud.",
+     5:"Threshold: let it fully close, or hold on a little longer.",
+     6:"Past the pivot — you've mostly let go, even if the details aren't final.",
+     7:"The need to defend how it turned out is loosening.",
+     8:"Watch for gripping the ending itself, needing it to look a certain way before you can release it.",
+     9:"Full transparency — nothing left to defend, nothing left to hide about how this went."},
+};
+function microFlavorFor(stage, micro){
+  const byStage = MICRO_FLAVOR_BY_STAGE[stage];
+  return (byStage && byStage[micro]) || MICRO_FLAVOR[micro];
+}
+
 function digitRootPair(text){
   const t = (text||"").trim();
   const words = t.length ? t.split(/\s+/).filter(Boolean) : [];
@@ -1124,8 +1237,8 @@ function readingHTML(reading, forEntryId){
       ${reading.stage===5 ? stage5ForkHTML() : ""}
       ${m ? `
       <div style="margin-top:14px; font-size:.85rem; color:var(--text-dim);">
-        <b style="color:var(--text)">Micro-position ${reading.notation}:</b> ${MICRO_FLAVOR[m.micro]}
-        — drawn from your closing line: <i>"${escapeHTML(truncate(m.sliceText,120))}"</i>
+        <b style="color:var(--text)">Micro-position ${reading.notation}:</b> ${microFlavorFor(reading.stage, m.micro)}<br>
+        <span style="color:var(--text-faint)">Drawn from your closing line: <i>"${escapeHTML(truncate(m.sliceText,120))}"</i></span>
       </div>` : ""}
       <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
       <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
@@ -1156,7 +1269,7 @@ function readingHTML(reading, forEntryId){
       <details class="math" style="margin-top:6px;">
         <summary>Zoom deeper (nano-position ${reading.notation3})</summary>
         <p>The same formula run a third time, on a smaller slice again: "<i>${escapeHTML(truncate(n.sliceText,70))}</i>" → digit ${n.micro}
-          (${MICRO_FLAVOR[n.micro]}).</p>
+          — ${microFlavorFor(reading.stage, n.micro)}</p>
         <p style="color:var(--text-faint)">Extra resolution for going deeper into the same position — a
           finer-grained view of where you are within the stage, not a different reading.</p>
       </details>` : ""}
