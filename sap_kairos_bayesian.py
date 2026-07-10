@@ -38,8 +38,22 @@ class KairosBayesian:
 
     def posterior(self, x: np.ndarray) -> np.ndarray:
         logits = self._raw_logits(x)
-        logits = SAPEnergy.modulate_logits(logits, x.tolist(), self.beta)
-
+        # NOTE: this used to also call SAPEnergy.modulate_logits(logits, x, beta)
+        # here, subtracting beta * trap_energy(stage, x) from every stage's
+        # logit before the argmax that picks `dominant_stage`. trap_energy()
+        # reads the NSDT vector under the LEGACY, now-superseded axis guess
+        # (c, s, t, a, coh -- see sap_energy_layer.py's module docstring),
+        # which conflicts with the confirmed N/S/D/T/C axes on 3 of 5
+        # positions. That meant stage classification was being silently
+        # steered by mismatched-axis trap energy even after STAGE_CENTROIDS
+        # was reconciled to the confirmed axes -- caught by round-tripping
+        # each new centroid back through classification and finding Stage 8
+        # misclassified as Stage 4 purely from this modulation term.
+        # Classification below is now pure nearest-centroid distance on the
+        # confirmed axes. trap_energy() is still computed AFTER a stage is
+        # chosen (see forward()) and still drives the informational
+        # trap_energy/chamber/trap_score_amplifier fields -- it just no
+        # longer gets a vote in which stage is chosen in the first place.
         if self.previous_stage is not None:
             mask = self.geometry.get_adjacency()[self.previous_stage]
             logits = np.where(mask > 0, logits, -np.inf)

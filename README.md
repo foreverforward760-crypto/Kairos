@@ -95,10 +95,9 @@ the exact same engine as `/analyze`. The AI-generated narrative is then written 
 real computed state (see `generate_ai_reading()` in `sap_kairos_ai_reading.py`) — Claude explains
 what the math found, it doesn't invent its own version of it.
 
-See [`docs/NSDT_REFERENCE.md`](docs/NSDT_REFERENCE.md) for the confirmed axis definitions (and a
-documented, real inconsistency: the *stage classifier* that picks `dominant_stage` still runs on an
-older, unconfirmed axis guess — read that doc before assuming every field in a response carries the
-same confidence).
+See [`docs/NSDT_REFERENCE.md`](docs/NSDT_REFERENCE.md) for the confirmed axis definitions, and
+for how the stage classifier's centroids were reconciled to them (plus the one piece —
+`trap_energy()` — that was deliberately left as legacy rather than re-guessed).
 
 ---
 

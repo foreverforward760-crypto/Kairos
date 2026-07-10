@@ -31,21 +31,55 @@ STAGE_METADATA_KAIROS = {
         "trickster": "Eshu: 'You have become the threshold – now rest.'"},
 }
 
-# Reuse centroids from canonical SAP (same 5D coordinates)
+# STAGE_CENTROIDS -- reconciled against the confirmed N/S/D/T/C axes
+# (Complexity, Stability, Adaptability, Tension, Coherence -- see
+# docs/NSDT_REFERENCE.md and sap_kairos_tumbling_inversion.py).
+#
+# These were previously hand-picked under a DIFFERENT, now-superseded axis
+# guess (c/s/t/a/coh -- Connection/Stability/Tension/Agency/Coherence, from
+# sap_energy_layer.py), which conflicted with the confirmed axes on 3 of 5
+# positions. No canonical centroid table exists anywhere in the SAPP source
+# material (confirmed by reading SAPP_Framework_v25_FINAL.html), so there
+# was never a "correct" table to restore -- this is a from-scratch rebuild,
+# done deliberately rather than guessed a second time:
+#
+#   - S (Stability) and C (Coherence) are SOLVED from the confirmed
+#     compute_inversion() formulas (sap_kairos_tumbling_inversion.py) so
+#     that each stage's known parity (even = Physically Stable / Consciously
+#     Unstable, odd = the inverse) is produced by construction, not by
+#     coincidence -- verified by round-tripping every centroid back through
+#     compute_inversion() (see the derivation script noted below).
+#   - T (Tension) and D (Adaptability) are seeded from each stage's existing
+#     `polyvagal` field above (ventral/sympathetic/dorsal) -- an
+#     already-present, code-grounded signal, not a fresh invention.
+#   - N (Complexity) has no formula pull anywhere in compute_inversion() --
+#     it's unpacked there but never used -- so it's an explicit, disclosed,
+#     standalone curve (rises through the structure-building stages, peaks
+#     at Integration/Insight, eases at Crystallization, falls back toward
+#     Stage 0's simplicity by Stage 9), not derived from anything.
+#
+# Net effect: axis directionality (which of physical/consciousness stability
+# is higher) is now formula-guaranteed correct for every stage. The specific
+# depth of each value is still an engineering judgment call, same as before
+# -- it's reconciled with the confirmed framework, not independently
+# validated against real client data.
 STAGE_CENTROIDS = {
-    0: [0.0, 0.0, 0.0, 0.0, 0.0],
-    1: [1.0, 8.0, 1.0, 1.0, 1.0],
-    2: [2.0, 7.0, 2.0, 2.0, 2.0],
-    3: [4.0, 7.0, 2.5, 3.0, 4.0],
-    4: [3.5, 6.5, 3.0, 3.5, 5.0],
-    5: [5.0, 4.0, 5.0, 5.0, 4.5],
-    6: [6.0, 5.5, 4.0, 6.0, 6.5],
-    7: [6.5, 3.0, 7.0, 7.0, 3.5],
-    8: [7.5, 7.0, 8.0, 2.0, 2.0],
-    9: [8.0, 2.0, 8.5, 1.5, 1.5],
+    0: [0.0, 3.93, 8.0, 2.5, 2.0],
+    1: [1.5, 4.43, 5.5, 7.0, 7.5],
+    2: [3.0, 7.79, 2.0, 6.5, 6.0],
+    3: [4.0, 4.14, 5.5, 7.0, 8.1],
+    4: [4.5, 8.21, 2.0, 6.5, 6.4],
+    5: [5.5, 1.79, 8.0, 2.5, 6.4],
+    6: [7.0, 7.5, 8.0, 2.5, 1.0],
+    7: [7.5, 3.29, 5.5, 7.0, 9.5],
+    8: [6.0, 9.93, 2.0, 6.5, 5.6],
+    9: [3.0, 3.93, 8.0, 2.5, 4.0],
 }
 
-AXIS_WEIGHTS = [1.0, 1.5, 1.5, 1.0, 0.8]
+AXIS_WEIGHTS = [1.0, 1.5, 1.5, 1.0, 0.8]  # positional tuning, carried over unchanged --
+# still weights Stability (index 1) and Adaptability (index 2, formerly the
+# old "Tension" guess) most heavily in nearest-centroid distance; no
+# axis-identity-specific assumption baked into the weights themselves.
 AXIS_SCALES = [10.0, 10.0, 10.0, 10.0, 10.0]
 
 # --- Stage 8 Dual-Chamber Trap (README: "Constitutional Constraints") ---
@@ -58,22 +92,25 @@ STAGE8_CHAMBER_PERMANENCE = "Illusion of Permanence"
 
 
 def classify_stage8_chamber(x: List[float]) -> str:
-    """Heuristic Stage 8 chamber classifier.
+    """LEGACY, first-pass heuristic Stage 8 chamber classifier -- prefer the
+    real `stage_paradox` field (Crystallization Paradox / Gratitude
+    Mechanism, sap_kairos_stage_paradox.classify_crystallization()) for any
+    Stage 8 reading; this function predates that and is kept only for the
+    backward-compatible `chamber` API field.
 
     README defines two Stage 8 chambers: Chamber A "Illusion of Arrival"
     (high-frequency trap -- a permanent blissful/righteous state believed
     achieved) and Chamber B "Illusion of Permanence" (low-frequency trap --
     a state of suffering/stagnation believed inescapable).
 
-    This is a first-pass, fully disclosed heuristic, NOT a validated
-    clinical instrument. It uses NSDT axis 0 as a provisional valence
-    proxy: at/above the 5.0 midpoint reads as Chamber A, below reads as
-    Chamber B. Axis 0's exact real-world meaning is inferred from the
-    variable name "c" in sap_energy_layer.py, not confirmed elsewhere in
-    this repo -- see docs/NSDT_REFERENCE.md for the full caveat. Replace
-    this with a validated discriminator (or richer multi-axis logic)
-    before relying on the "chamber" field for anything beyond a labeling
-    suggestion.
+    This was never a validated clinical instrument, and its one signal is
+    now doubly unconfirmed: it reads NSDT axis 0 as a valence proxy
+    (>= 5.0 -> Chamber A, below -> Chamber B), but axis 0 is now confirmed
+    to be Complexity (see docs/NSDT_REFERENCE.md), which has no obvious
+    relationship to "valence" at all -- the original guess was built
+    against a different, superseded axis (Connection). Nothing here was
+    changed, because there's no confirmed axis to swap in that means
+    "valence" either. Treat `chamber` as a legacy label, not a finding.
     """
     valence_proxy = x[0]
     return STAGE8_CHAMBER_ARRIVAL if valence_proxy >= 5.0 else STAGE8_CHAMBER_PERMANENCE
