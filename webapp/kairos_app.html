@@ -265,13 +265,16 @@
     <div class="banner" id="disclaimerBanner">
       <button class="dismiss" onclick="dismissBanner()">hide</button>
       <b>What this is:</b> an interpretive self-reflection tool — the same category as tarot, the I Ching, or a
-      structured journaling prompt deck. It is <b>not</b> a scientific measurement or prediction tool.
+      structured journaling prompt deck.
       <br><br>
-      <b>How the "reading" works:</b> it reduces the word count and letter count of whatever text you enter to a
-      single digit (0–9), the same digit-root arithmetic used throughout this project's Container Rule engine, and
-      maps the result to one of ten named stages. That math will find a "pattern" in <i>any</i> sufficiently long
-      text — Scripture, a grocery list, or random keyboard mashing — with equal reliability. That's a property of
-      modular arithmetic, not evidence about the text. Treat every reading as a writing prompt, not a verdict.
+      <b>How the reading works:</b> the ten stages form a wheel, not a ladder — 0 through 9 and back to 0. The
+      cycle moves forward by <b>tumbling</b>: at the even stages (2, 4, 6, 8) the outer situation looks solid while
+      the inner state is quietly unsettled underneath it; at the odd stages (1, 3, 5, 7, 9) the outer situation
+      looks unsettled while the inner state is actually gaining clarity. Neither side can hold forever, so the
+      system keeps tumbling forward — that trade-off is the engine, not a flaw in it. Every reading locates where
+      your words currently sit on that wheel, using the shape of the text itself (word count and letter count,
+      reduced the same way throughout this project) — point it at anything: a passage, a conversation, a decision,
+      a single sentence.
       <br><br>
       <b>Your data:</b> the base reading (the stage, the habits, the quote) runs entirely on your device using
       simple word/letter arithmetic — nothing is sent anywhere for that part, and "Export data" on any journal tab
@@ -988,21 +991,19 @@ function readingHTML(reading, forEntryId){
           <tr><td>Digital root (micro stage)</td><td>${m.micro}</td></tr>
           ` : ""}
         </table>
-        <p style="margin-top:8px;">These labels come from this project's own internal vocabulary (the Container
-        Rule engine). They describe the arithmetic, not a property of your text. Any text of similar length lands
-        on a digit-root the same way — "resonance" (digital root 9) shows up whenever the word-digit and
-        letter-digit happen to add to a multiple of 9, which is common by construction, not rare. The micro digit
-        is the exact same formula run again on the slice shown above — a real recursive drill-down, not a
-        different or more precise method.</p>
+        <p style="margin-top:8px;">This is how the tumble is located: word count and letter count each reduce
+        to a single digit, and their sum reduces again to name the position on the wheel. Resonance (digital root
+        9) marks a full turn completing inside the reading. The micro digit is the exact same formula run again on
+        the slice shown above — a real recursive drill-down into where you are within the stage, not a different
+        method.</p>
       </details>
       ${m && n ? `
       <details class="math" style="margin-top:6px;">
         <summary>Zoom deeper (nano-position ${reading.notation3})</summary>
         <p>The same formula run a third time, on a smaller slice again: "<i>${escapeHTML(truncate(n.sliceText,70))}</i>" → digit ${n.micro}
           (${MICRO_FLAVOR[n.micro]}).</p>
-        <p style="color:var(--text-faint)">Offered as extra resolution for people who want to zoom further — like a
-          finer-grained map, not a more accurate one. The same "this math finds a pattern in anything" caveat
-          applies at every zoom level; going deeper doesn't make it more true, just more granular.</p>
+        <p style="color:var(--text-faint)">Extra resolution for going deeper into the same position — a
+          finer-grained view of where you are within the stage, not a different reading.</p>
       </details>` : ""}
     </div>`;
 }
