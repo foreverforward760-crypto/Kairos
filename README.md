@@ -76,6 +76,8 @@ Descent and ascent are not sequential. They are the same motion happening simult
 | GET | `/history/{system_id}` | Retrieve past snapshots |
 | POST | `/reset/{system_id}` | Clear session history |
 | POST | `/score-nsdt` | AI-assisted NSDT scoring from freeform notes (opt-in, see below) |
+| POST | `/reading` | AI-deepened consumer reading: narrative, story parallel, Trickster Take, follow-up questions (opt-in, see below) |
+| POST | `/reading/elaborate` | Continue a reading's follow-up thread (stateless, opt-in, see below) |
 | GET | `/health` | Health check |
 
 ---
@@ -135,6 +137,8 @@ All optional, read from the environment at startup:
 | `KAIROS_DATA_DIR` | `./kairos_data` | Directory for per-client session JSON when `KAIROS_STORAGE_BACKEND=file`. `system_id` is sanitized before being used in a filename, so this is safe against path traversal even with untrusted `system_id` input. |
 | `KAIROS_API_KEY` | unset | If set, every request except `/health` must send a matching `X-API-Key` header. If unset, the API is open — fine for local dev, not for anything network-reachable. |
 | `KAIROS_ALLOWED_ORIGINS` | unset | Comma-separated origins allowed to call this API from a browser (CORS). If unset, no CORS middleware is added at all — the safe default is that no browser can call this cross-origin. |
+| `KAIROS_ENABLE_AI_READINGS` | unset | `true` to turn on `POST /reading` and `POST /reading/elaborate` (see "Kairos App" section below). |
+| `KAIROS_AI_READING_MODEL` | `claude-sonnet-5` | Claude model used for `/reading` and `/reading/elaborate`. |
 
 ## AI-Assisted NSDT Scoring (optional)
 
@@ -220,6 +224,85 @@ It ships three journals — **Pattern Scan** (scan any text/topic and save the r
 (track named life areas over time and surface repeat-stage patterns in your own check-ins), and **Habit
 Log** (a per-stage habit checklist that tallies what recurs) — plus a **Stage Guide** reference tab. All
 data stays in the browser's local storage. See `webapp/README.md` for details.
+
+---
+
+## Kairos App (`webapp/kairos_app.html`) — consumer build
+
+`webapp/kairos_app.html` is the same Reflection Journal, with an optional AI-deepened reading layer built
+on top of it. It's aimed at a general reader, not a practitioner: paste anything (a passage, a journal
+entry, a description of a situation) and it names the stage, then — if you want more — asks Claude to
+write a personalized narrative, pull a real story or quote that parallels your situation, and hand you a
+**Trickster Take**.
+
+**Trickster Take** is the app's signature bit: a short, wry line written in the voice of one of five
+mythic tricksters (Coyote, Anansi, Loki, Br'er Rabbit, Eshu) that reframes your situation instead of just
+restating it — closer to a sharp friend or a good tarot reader than a clinical readout. The base engine
+already had one fixed trickster line per stage (`sap_kairos_geometry.py`); this generates a fresh one
+every time, grounded in what you actually wrote.
+
+Other additions on top of the base journal:
+
+- **"Ask Kairos to go deeper"** — one tap on any reading sends the stage (already decided by the local
+  digit-root math) and your text to `POST /reading`, and renders back the narrative, the Trickster Take,
+  the story/quote parallel, and 1-2 follow-up questions.
+- **Follow-up thread** — tapping a follow-up question opens a short reply box; your answer goes to
+  `POST /reading/elaborate` along with the thread so far, and Kairos responds in place. Nothing is stored
+  server-side — the browser holds the thread and resends it each time.
+- **Share card** — turns a reading into a downloadable image (stage, one-line Trickster Take, no personal
+  text) sized for sharing.
+- **Streak** — counts consecutive days with any journal activity across all three journals.
+- **Fully optional, off by default** — with no backend connected, the app behaves exactly like
+  `pattern_reflection_journal.html`: local-only, no network calls. Connecting it (Home tab → "Kairos AI")
+  just means pointing the page at a running `api_kairos.py` with `KAIROS_ENABLE_AI_READINGS=true` set.
+
+### What actually happens to what you share
+
+The base reading never leaves the device — it's word/letter arithmetic run in the browser. The moment you
+tap "Ask Kairos to go deeper" or answer a follow-up question, that text is sent to the backend and on to
+Anthropic's Claude API to generate the response. It isn't used to train anything, but the honest framing
+is the same one that applies to any online tool: don't paste something you wouldn't want to leave your
+device, and use the same judgment here you'd use anywhere else online. This is stated in-app, not just
+here.
+
+### Public stage names
+
+`kairos_app.html` keeps the same canonical internal stage names as the rest of the project
+(`sap_kairos_public_content.py` is the naming layer, nothing else changes), but gives each stage a short
+public handle for quick scanning:
+
+| Stage | Canonical name | Public handle |
+|---|---|---|
+| 0 | PLENARA | The Open Field |
+| 1 | SPARK OF NAVIGATION | The Spark |
+| 2 | FORGE OF POLARITY | The Divide |
+| 3 | ENGINE OF EXPRESSION | The Push |
+| 4 | CRUCIBLE OF EQUILIBRIUM | The Steady |
+| 5 | DYNAMO OF WILL | The Turn |
+| 6 | NEXUS OF HARMONY | The Weave |
+| 7 | LENS OF DISTILLATION | The Clarity |
+| 8 | VESSEL OF GROUNDING | The Grip |
+| 9 | TRANSPARENCY OF THE GUIDE | The Release |
+
+The 0-9-0 Tumbling Inversion is unchanged and still the app's core explanatory device: the ten stages are
+a loop, not a ladder — descending and ascending are the same motion seen from different sides, and nobody
+is ever in only one stage at a time. `TUMBLING_INVERSION_SHORT` in `sap_kairos_public_content.py` has the
+one-paragraph version used in-app.
+
+### Running it
+
+```bash
+KAIROS_ENABLE_AI_READINGS=true ANTHROPIC_API_KEY=sk-ant-... KAIROS_ALLOWED_ORIGINS=https://your-frontend-host uvicorn api_kairos:app --host 0.0.0.0 --port 8000
+```
+
+Then open `webapp/kairos_app.html` (as a local file, or hosted anywhere static), go to the Home tab →
+Kairos AI, and paste the backend's address.
+
+**Note for public deployment:** `/reading` and `/reading/elaborate` are intentionally *not* behind
+`KAIROS_API_KEY` — they're meant to be called directly from a public browser page with no login. That
+also means anyone who finds the URL can call them and spend your Anthropic budget. If you deploy this
+publicly, put it behind a reverse proxy with rate limiting (or your own lightweight per-IP throttle) before
+it's reachable from the internet — that's infrastructure this repo doesn't provide.
 
 ---
 

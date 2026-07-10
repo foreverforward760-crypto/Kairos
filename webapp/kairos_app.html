@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairos — find the pattern in anything</title>
+<style>
+  :root{
+    --bg:#14121c; --bg2:#1b1826; --card:#211d2e; --card2:#28233a;
+    --border:#39334c; --text:#eae6f2; --text-dim:#a89fc2; --text-faint:#786f96;
+    --accent:#e0b568; --accent-dim:#8a744a; --danger:#d97b6c; --good:#7fbf9e;
+    --radius:14px; --maxw:840px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    line-height:1.55; padding-bottom:80px;
+  }
+  a{color:var(--accent);}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px;}
+  header.top{
+    background:linear-gradient(180deg,var(--bg2),var(--bg));
+    border-bottom:1px solid var(--border); padding:22px 0 0 0;
+  }
+  header.top h1{
+    font-size:1.5rem; margin:0 0 4px 0; letter-spacing:.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  header.top .tagline{color:var(--text-dim); font-size:.92rem; margin-bottom:16px;}
+  nav.tabs{display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    background:none; border:none; color:var(--text-dim); padding:12px 16px;
+    font-size:.92rem; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent;
+    font-weight:500;
+  }
+  nav.tabs button.active{color:var(--accent); border-bottom:2px solid var(--accent);}
+  nav.tabs button:hover{color:var(--text);}
+
+  main{padding-top:22px;}
+  section.tab{display:none;}
+  section.tab.active{display:block; animation:fadein .15s ease;}
+  @keyframes fadein{from{opacity:0} to{opacity:1}}
+
+  h2{font-size:1.2rem; margin:0 0 6px 0;}
+  h3{font-size:1rem; margin:22px 0 8px 0; color:var(--text);}
+  p.lead{color:var(--text-dim); margin-top:0;}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .card.tight{padding:14px 16px;}
+
+  .banner{
+    background:#2a2338; border:1px solid var(--accent-dim); border-radius:var(--radius);
+    padding:14px 18px; margin-bottom:18px; font-size:.88rem; color:var(--text-dim);
+  }
+  .banner b{color:var(--accent);}
+  .banner .dismiss{
+    float:right; background:none; border:none; color:var(--text-faint); cursor:pointer;
+    font-size:.85rem; text-decoration:underline;
+  }
+
+  label{display:block; font-size:.82rem; color:var(--text-dim); margin:14px 0 5px 0; font-weight:600;}
+  label:first-child{margin-top:0;}
+  input[type=text], textarea, select{
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:9px;
+    color:var(--text); padding:10px 12px; font-size:.92rem; font-family:inherit; resize:vertical;
+  }
+  textarea{min-height:120px;}
+  input[type=text]:focus, textarea:focus, select:focus{outline:1px solid var(--accent);}
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .row > *{flex:1; min-width:160px;}
+
+  button.btn{
+    background:var(--accent); color:#241d10; border:none; border-radius:9px;
+    padding:10px 18px; font-size:.9rem; font-weight:700; cursor:pointer; margin-top:16px;
+  }
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.secondary{
+    background:transparent; color:var(--text-dim); border:1px solid var(--border); font-weight:600;
+  }
+  button.btn.secondary:hover{color:var(--text); border-color:var(--text-dim);}
+  button.btn.danger{background:transparent; color:var(--danger); border:1px solid var(--danger);}
+  button.btn.small{padding:6px 12px; font-size:.8rem; margin-top:0;}
+
+  .stage-badge{
+    display:inline-flex; align-items:center; gap:8px; padding:5px 12px 5px 8px;
+    border-radius:999px; font-size:.82rem; font-weight:700; color:#100e17;
+  }
+  .stage-dot{width:9px; height:9px; border-radius:50%; background:currentColor;}
+
+  .reading{border-left:3px solid var(--accent); padding-left:16px; margin-top:16px;}
+  .reading .stagename{font-size:1.15rem; font-weight:700; margin:8px 0 2px 0;}
+  .reading .human{color:var(--text-dim); font-style:italic; margin-bottom:10px;}
+  details.math{margin-top:14px; font-size:.85rem; color:var(--text-dim);}
+  details.math summary{cursor:pointer; color:var(--accent); font-weight:600;}
+  details.math table{width:100%; border-collapse:collapse; margin-top:10px;}
+  details.math td{padding:4px 6px; border-bottom:1px solid var(--border);}
+  details.math td:first-child{color:var(--text-faint);}
+
+  ul.habits{margin:8px 0 0 0; padding-left:20px; color:var(--text-dim); font-size:.9rem;}
+  ul.habits li{margin-bottom:4px;}
+  .prompt-box{
+    background:var(--card2); border-radius:10px; padding:12px 14px; margin-top:12px;
+    font-style:italic; color:var(--text);
+  }
+
+  .entry{border-top:1px solid var(--border); padding-top:14px; margin-top:14px;}
+  .entry:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .entry .meta{font-size:.78rem; color:var(--text-faint); margin-bottom:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .entry .body{font-size:.9rem; color:var(--text-dim); white-space:pre-wrap;}
+  .entry .note{margin-top:6px; font-size:.85rem; color:var(--text); background:var(--card2); padding:8px 10px; border-radius:8px;}
+  .entry-actions{margin-top:6px;}
+  .entry-actions button{margin-right:8px;}
+
+  .empty{color:var(--text-faint); font-size:.88rem; padding:10px 0;}
+
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:6px; font-size:.8rem;}
+  .bar-row .label{width:150px; color:var(--text-dim); flex-shrink:0;}
+  .bar-track{flex:1; background:var(--bg2); border-radius:6px; height:14px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px;}
+  .bar-row .count{width:24px; text-align:right; color:var(--text-faint);}
+
+  .area-chip{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2);
+    border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:.85rem;
+    cursor:pointer; margin:0 8px 8px 0;
+  }
+  .area-chip.selected{border-color:var(--accent); color:var(--accent);}
+
+  .guide-stage{border-bottom:1px solid var(--border); padding:16px 0;}
+  .guide-stage:last-child{border-bottom:none;}
+  .guide-stage h3{margin:0 0 4px 0; display:flex; align-items:center; gap:10px;}
+
+  .habit-group summary{cursor:pointer; font-weight:700; padding:8px 0; display:flex; align-items:center; gap:8px;}
+  .habit-group{border-bottom:1px solid var(--border); padding:4px 0;}
+  .habit-group:last-child{border-bottom:none;}
+  .habit-check{display:flex; align-items:flex-start; gap:8px; padding:5px 0 5px 20px; font-size:.88rem; color:var(--text-dim);}
+  .habit-check input{margin-top:3px;}
+
+  footer{margin-top:40px; text-align:center; color:var(--text-faint); font-size:.78rem; padding:20px;}
+  footer a{color:var(--text-faint);}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--good); color:#0f1a14; padding:10px 20px; border-radius:999px;
+    font-size:.85rem; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+
+  @media (max-width:520px){
+    .row > *{min-width:100%;}
+    .bar-row .label{width:100px;}
+  }
+
+  .quote-box{
+    border-left:3px solid var(--text-faint); padding:10px 14px; margin-top:12px;
+    font-size:.88rem; color:var(--text-dim); font-style:italic;
+  }
+  .quote-box cite{display:block; margin-top:4px; font-style:normal; font-size:.78rem; color:var(--text-faint);}
+  .breathe-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); border-radius:999px; padding:6px 14px; font-size:.82rem; cursor:pointer; margin-top:12px;
+  }
+  .breathe-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(10,9,15,.82);
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-box{
+    background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:28px 24px; max-width:380px; width:100%; text-align:center;
+  }
+  .modal-box h3{margin:0 0 4px 0;}
+  .modal-box .breath-note{color:var(--text-dim); font-size:.85rem; margin-bottom:22px;}
+  .breath-stage{
+    width:150px; height:150px; margin:0 auto 20px auto; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .breath-circle{
+    width:90px; height:90px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--accent), var(--accent-dim));
+    transform:scale(1); transition:transform 4s linear;
+  }
+  #breathPhase{font-size:1.05rem; font-weight:700; margin-bottom:4px;}
+  #breathCount{color:var(--text-dim); font-size:.85rem; margin-bottom:20px;}
+  .modal-actions{display:flex; gap:10px; justify-content:center;}
+
+  .trickster-box{
+    border-left:3px solid var(--accent); background:rgba(224,181,104,.08);
+    padding:12px 14px; margin-top:14px; border-radius:0 8px 8px 0;
+  }
+  .trickster-box .label{
+    display:block; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:4px; font-weight:700;
+  }
+  .trickster-box .line{font-size:.92rem; color:var(--text);}
+  .ai-block{
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--border);
+  }
+  .ai-narrative{font-size:.92rem; color:var(--text); margin-bottom:4px;}
+  .ai-parallel{
+    border-left:3px solid var(--text-faint); padding:10px 14px; margin-top:10px;
+    font-size:.86rem; color:var(--text-dim); font-style:italic;
+  }
+  .ai-parallel cite{display:block; margin-top:4px; font-style:normal; font-size:.78rem; color:var(--text-faint);}
+  .ai-questions{margin-top:12px;}
+  .ai-q-btn{
+    display:block; width:100%; text-align:left; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); border-radius:10px; padding:9px 12px; font-size:.85rem; cursor:pointer; margin-top:6px;
+  }
+  .ai-q-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .ai-thread{margin-top:10px;}
+  .ai-thread .turn{margin-top:10px;}
+  .ai-thread .q{font-size:.82rem; color:var(--text-dim); font-weight:600;}
+  .ai-thread .a{font-size:.85rem; color:var(--text); margin:4px 0;}
+  .ai-thread .reply{font-size:.85rem; color:var(--text-dim); font-style:italic;}
+  .ai-answer-box{display:flex; gap:8px; margin-top:8px;}
+  .ai-answer-box textarea{flex:1; min-height:44px;}
+  .ai-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--accent); border:1px solid var(--accent);
+    color:#1b1607; border-radius:999px; padding:8px 16px; font-size:.85rem; cursor:pointer; margin-top:14px;
+    font-weight:700;
+  }
+  .ai-btn:hover{opacity:.9;}
+  .ai-btn:disabled{opacity:.5; cursor:default;}
+  .ai-btn.secondary{
+    background:transparent; color:var(--accent); font-weight:600;
+  }
+  .ai-status{font-size:.82rem; color:var(--text-faint); margin-top:8px;}
+  .ai-settings{margin-top:14px;}
+  .ai-settings input{font-size:.85rem;}
+  .streak-pill{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border);
+    border-radius:999px; padding:6px 14px; font-size:.85rem; margin-bottom:14px;
+  }
+  #shareCardWrap{margin-top:14px; display:none;}
+  #shareCardCanvas{max-width:100%; border-radius:10px; border:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>🜛 Kairos Reflection Journal</h1>
+    <div class="tagline">A pattern-reflection tool for whatever you bring it — texts, relationships, work, habits, cycles.</div>
+    <nav class="tabs">
+      <button data-tab="home" class="active">Home</button>
+      <button data-tab="scan">Pattern Scan</button>
+      <button data-tab="cycle">Cycle Journal</button>
+      <button data-tab="habits">Habit Log</button>
+      <button data-tab="guide">Stage Guide</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HOME -->
+  <section class="tab active" id="tab-home">
+    <div class="banner" id="disclaimerBanner">
+      <button class="dismiss" onclick="dismissBanner()">hide</button>
+      <b>What this is:</b> an interpretive self-reflection tool — the same category as tarot, the I Ching, or a
+      structured journaling prompt deck. It is <b>not</b> a scientific measurement or prediction tool.
+      <br><br>
+      <b>How the "reading" works:</b> it reduces the word count and letter count of whatever text you enter to a
+      single digit (0–9), the same digit-root arithmetic used throughout this project's Container Rule engine, and
+      maps the result to one of ten named stages. That math will find a "pattern" in <i>any</i> sufficiently long
+      text — Scripture, a grocery list, or random keyboard mashing — with equal reliability. That's a property of
+      modular arithmetic, not evidence about the text. Treat every reading as a writing prompt, not a verdict.
+      <br><br>
+      <b>Your data:</b> the base reading (the stage, the habits, the quote) runs entirely on your device using
+      simple word/letter arithmetic — nothing is sent anywhere for that part, and "Export data" on any journal tab
+      backs it up or moves it to another device. If you tap <b>"Ask Kairos to go deeper"</b> on a reading, the text
+      you're reading gets sent to Claude (Anthropic's AI) to generate a personalized narrative, a story parallel,
+      and follow-up questions — that's the one part of this app that isn't fully local. As with anything you type
+      into any online tool: don't paste something you wouldn't want to leave your device, and use the same
+      judgment here you'd use anywhere else online.
+      <br><br>
+      Not intended for medical, legal, financial, or diagnostic decisions.
+    </div>
+
+    <div class="card" id="aiSettingsCard">
+      <h2>✨ Kairos AI <span style="color:var(--text-dim); font-weight:400; font-size:.85rem;">(optional)</span></h2>
+      <p class="lead" style="margin-bottom:10px;">Every reading works fully offline with no setup. If you want
+        each reading deepened — a personalized narrative, a real story or quote parallel, a Trickster Take, and
+        follow-up questions — point this at a running Kairos backend (see the project README for how to host one)
+        and paste its address below. Leave it blank to skip this entirely.</p>
+      <div class="row ai-settings">
+        <input type="text" id="aiBackendUrl" placeholder="e.g. https://your-kairos-backend.example.com">
+        <button class="btn small" style="margin-top:0" onclick="saveBackendURL()">Save</button>
+      </div>
+      <div id="aiSettingsStatus" class="ai-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>What you can do here</h2>
+      <p class="lead">Bring anything — a Bible or Quran passage, a paragraph about a relationship, a section of your
+        resume, a note about what you ate today, a description of a recurring argument. The engine doesn't need to
+        know what kind of thing it is; it just reflects the same ten-stage lens back at it, and gives you a prompt
+        to think with.</p>
+      <div class="row">
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('scan')">
+          <b>1. Pattern Scan</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Paste any text or write about any
+            topic. Get a stage reading, the habits typically associated with it, and a reflective prompt. Save it
+            to build a running journal.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('cycle')">
+          <b>2. Cycle Journal</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Track named life areas — a
+            relationship, a job search, a health habit — over time, and see where you keep landing.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('habits')">
+          <b>3. Habit Log</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">A checklist of plain-language habits
+            per stage. Check off what you notice in yourself, and watch which stages recur most.</p>
+        </div>
+      </div>
+      <p style="margin-top:16px;"><a href="#" onclick="switchTab('guide'); return false;">→ Read the Stage Guide</a>
+        first if you want to know what the ten stages mean before you start.</p>
+    </div>
+
+    <div class="card">
+      <h2>What's new</h2>
+      <p class="lead" style="margin-bottom:10px;">A few pieces of this project's own framework beyond raw digit-root
+        math, added honestly:</p>
+      <ul class="habits" style="margin-bottom:14px;">
+        <li><b>Inversion</b> — every reading now shows whether the stage reads as physically stable/unstable
+          vs. consciously stable/unstable, ported from the Container Rule engine's own labeling.</li>
+        <li><b>Stage 5 fork</b> — Stage 5 readings now name the three real directions (Advance / Freeze / Crisis)
+          instead of just a habit list.</li>
+        <li><b>Trap accumulation</b> — the Cycle Journal now flags when an area's check-ins repeat Stage 8,
+          using the same consecutive-count logic as the engine's trap detector.</li>
+        <li><b>Deeper zoom</b> — readings can now drill a third level down (nano-position), same transparent
+          math, smaller slice, opt-in.</li>
+        <li><b>Consistency signal</b> — the Cycle Journal now computes real entropy over your own check-in
+          history per area, showing whether it clusters on one stage or scatters.</li>
+      </ul>
+      <p class="lead" style="margin-bottom:0; font-size:.85rem;">Left out on purpose: a formula that scores your
+        odds of success at a decision (its weights were never fit to real outcomes — a percentage would be
+        invented, not computed), and any claim that this can tell real signal from meaningless text. The
+        consistency signal above measures how consistent <i>you've been</i>, not whether your words mean
+        anything.</p>
+    </div>
+
+    <div class="card">
+      <h2>Quick stats</h2>
+      <div id="homeStats"></div>
+      <button class="btn secondary small" onclick="exportAll()">Export all data (.json)</button>
+      <button class="btn danger small" onclick="clearAllData()">Clear all data</button>
+    </div>
+  </section>
+
+  <!-- PATTERN SCAN -->
+  <section class="tab" id="tab-scan">
+    <h2>Pattern Scan</h2>
+    <p class="lead">Paste a passage — sacred text, a journal entry, a resume bullet, a description of a fight you
+      had — anything. It gets read through the same ten-stage lens either way.</p>
+
+    <div class="card">
+      <label>Title (optional)</label>
+      <input type="text" id="scanTitle" placeholder="e.g. Psalm 23, or 'the talk with my sister'">
+      <label>Life domain (optional, for your own filing)</label>
+      <select id="scanDomain">
+        <option value="">— unspecified —</option>
+        <option>Sacred / ancient text</option>
+        <option>Relationship</option>
+        <option>Family</option>
+        <option>Work / resume</option>
+        <option>Diet / health</option>
+        <option>Emotional trigger</option>
+        <option>Other</option>
+      </select>
+      <label>Text</label>
+      <textarea id="scanText" placeholder="Paste or write anything here..."></textarea>
+      <button class="btn" onclick="runScan()">Scan</button>
+      <div id="scanResult"></div>
+    </div>
+
+    <h3>Saved entries</h3>
+    <div class="card" id="scanHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('pattern')">Export Pattern Scan entries</button>
+  </section>
+
+  <!-- CYCLE JOURNAL -->
+  <section class="tab" id="tab-cycle">
+    <h2>Cycle Journal</h2>
+    <p class="lead">Name the parts of your life you want to watch over time, then check in on them periodically.
+      This journal counts your own repeated entries plainly — no mysticism, just "you logged Stage 8 four of your
+      last six check-ins here."</p>
+
+    <div class="card">
+      <label>Add a life area</label>
+      <div class="row">
+        <input type="text" id="newAreaName" placeholder="e.g. My marriage, Job search, Eating habits">
+        <button class="btn small" style="margin-top:0" onclick="addArea()">Add area</button>
+      </div>
+      <div id="areaChips" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card" id="checkinCard" style="display:none;">
+      <h3 id="checkinAreaLabel" style="margin-top:0;"></h3>
+      <label>How do you want to check in?</label>
+      <div class="row">
+        <button class="btn secondary small" id="modeTextBtn" onclick="setCheckinMode('text')" style="margin-top:0">Describe it (auto-read)</button>
+        <button class="btn secondary small" id="modeManualBtn" onclick="setCheckinMode('manual')" style="margin-top:0">I already know the stage</button>
+      </div>
+
+      <div id="checkinTextMode">
+        <label>What's going on right now, in this area?</label>
+        <textarea id="checkinText" placeholder="A few sentences about where things stand..."></textarea>
+      </div>
+      <div id="checkinManualMode" style="display:none;">
+        <label>Which stage does this feel like?</label>
+        <select id="checkinManualStage"></select>
+        <label>Micro-position within it (optional)</label>
+        <select id="checkinManualMicro"></select>
+      </div>
+      <label>Note (optional)</label>
+      <input type="text" id="checkinNote" placeholder="Anything you want to remember about this moment">
+      <button class="btn" onclick="saveCheckin()">Save check-in</button>
+      <div id="checkinResult"></div>
+    </div>
+
+    <div id="areaHistoryWrap"></div>
+    <button class="btn secondary small" onclick="exportJournal('cycle')">Export Cycle Journal entries</button>
+  </section>
+
+  <!-- HABIT LOG -->
+  <section class="tab" id="tab-habits">
+    <h2>Habit Log</h2>
+    <p class="lead">Each stage tends to come with its own small, recognizable habits. Check off whatever you notice
+      in yourself right now — you don't have to pick just one stage, since different parts of your life are usually
+      in different places at once.</p>
+
+    <div class="card">
+      <label>Link to a life area (optional)</label>
+      <select id="habitArea"><option value="">— none —</option></select>
+      <div id="habitChecklist"></div>
+      <label>Trigger / note (optional)</label>
+      <input type="text" id="habitNote" placeholder="What set this off, or what you noticed">
+      <button class="btn" onclick="saveHabitLog()">Save habit log</button>
+    </div>
+
+    <h3>What's recurring</h3>
+    <div class="card" id="habitStats"></div>
+
+    <h3>Past logs</h3>
+    <div class="card" id="habitHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('habits')">Export Habit Log entries</button>
+  </section>
+
+  <!-- STAGE GUIDE -->
+  <section class="tab" id="tab-guide">
+    <h2>Stage Guide</h2>
+    <p class="lead">The ten stages this tool uses, in plain language. Use this as a reference for recognizing habits
+      in yourself — not as a diagnosis.</p>
+    <div class="banner">
+      <b>About the micro-position (e.g. "4.5"):</b> Pattern Scan also reads a smaller slice of what you wrote —
+      usually your closing sentence — through the same digit-root formula, giving a second digit 0–9 nested inside
+      the stage. Across every stage, .5 always lands on a threshold/pivot flavor and .9 always lands on a
+      transparency/release flavor; the digits in between (.1–.4, .6–.8) use one shared, generic set of labels
+      rather than 81 individually-authored ones. It's the same math run twice, not a more precise instrument.
+    </div>
+    <div class="card" id="guideList"></div>
+  </section>
+
+</main>
+
+<footer>
+  Kairos Reflection Journal — a companion interpretive tool for the Kairos / LASE Stanfield's Axiom of Perpetuity project.<br>
+  Runs entirely in your browser. No data leaves this device.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="breathOverlay">
+  <div class="modal-box">
+    <h3 id="breathTitle">Breathing</h3>
+    <div class="breath-note" id="breathNote"></div>
+    <div class="breath-stage"><div class="breath-circle" id="breathCircleInner"></div></div>
+    <div id="breathPhase">Ready</div>
+    <div id="breathCount"></div>
+    <div class="modal-actions">
+      <button class="btn secondary small" onclick="closeBreathing()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STAGE DATA — plain-language layer over the canonical SAP
+   stage names used across this project (Kairos / LASE).
+   Canonical names are kept for consistency with the rest of
+   the repo; everything else here is written for a general
+   reader doing self-reflection, not a technical audience.
+   ============================================================ */
+const STAGES = [
+  { n:0, canonical:"PLENARA", human:"Open Field",
+    essence:"A pause. Cleared space before or after a cycle, not a stalled one.",
+    habits:[
+      "Taking a break without immediately feeling guilty about it",
+      "Feeling directionless but not distressed by it",
+      "Clearing space before starting something new",
+      "Resisting the urge to fill the silence right away",
+      "A sense of 'nothing yet, and that's fine'"
+    ],
+    prompt:"What are you making room for by not rushing back in?" },
+  { n:1, canonical:"SPARK OF NAVIGATION", human:"Awakening",
+    essence:"A new direction announces itself, fragile and easily talked out of existing.",
+    habits:[
+      "A new idea keeps coming back uninvited",
+      "Feeling excited but unsure how to start",
+      "Talking about the idea more than acting on it yet",
+      "Protecting the idea from early criticism, including your own",
+      "Short bursts of research or journaling about it"
+    ],
+    prompt:"What's the smallest real step that would make this spark undeniable?" },
+  { n:2, canonical:"FORGE OF POLARITY", human:"Forming Identity",
+    essence:"Definition by contrast. You find out what you are partly by finding what you're not.",
+    habits:[
+      "Noticing what you're against as clearly as what you're for",
+      "Setting a boundary and immediately feeling guilty about it",
+      "Comparing yourself to a person or situation you're not",
+      "Testing a relationship or role by pushing against it",
+      "Tension between who you were and who you're becoming"
+    ],
+    prompt:"What boundary are you drawing right now, and who or what is it separating you from?" },
+  { n:3, canonical:"ENGINE OF EXPRESSION", human:"Discipline & Output",
+    essence:"Momentum through repetition. Effort becomes visible, sometimes at the cost of reflection.",
+    habits:[
+      "Leaning hard on routine or discipline",
+      "Producing more but reflecting less",
+      "Irritation when the effort isn't paying off visibly yet",
+      "Using busyness to avoid a harder feeling underneath",
+      "Measuring your worth by output"
+    ],
+    prompt:"What discipline are you leaning on, and what might it be helping you not feel?" },
+  { n:4, canonical:"CRUCIBLE OF EQUILIBRIUM", human:"Testing Ground",
+    essence:"Things hold steady. The open question is whether that's rest or stalling.",
+    habits:[
+      "Things feel stable but a little flat",
+      "Double-checking whether the foundation is actually solid",
+      "Resisting change because 'it's finally working'",
+      "Quietly gathering resources or energy before a next move",
+      "Comparing the current calm to a past storm"
+    ],
+    prompt:"Is this stability restful, or is it stalling?" },
+  { n:5, canonical:"DYNAMO OF WILL", human:"The Choice Point",
+    essence:"A real decision point. The most consequential of the ten stages — advance, freeze, or retreat.",
+    habits:[
+      "Circling the same decision over and over",
+      "Feeling torn between two clearly named paths",
+      "Asking many people for their opinion on it",
+      "Procrastinating on a decision that's already been made emotionally",
+      "Noticing a felt lean toward one option, even unspoken"
+    ],
+    prompt:"If you stopped weighing this and just noticed what you're already leaning toward — what is it?" },
+  { n:6, canonical:"NEXUS OF HARMONY", human:"Integration",
+    essence:"Separate efforts start reinforcing each other. A peak-function stage.",
+    habits:[
+      "Things clicking into place across more than one area at once",
+      "Wanting to teach or share what you've learned",
+      "A pull to consolidate rather than start something new",
+      "Noticing how separate efforts are now reinforcing each other",
+      "A sense of 'this is working' you don't quite trust yet"
+    ],
+    prompt:"What are you ready to pass on to someone else, now that it's working?" },
+  { n:7, canonical:"LENS OF DISTILLATION", human:"Insight & Isolation",
+    essence:"Clarity that outpaces connection. The risk here is isolation, not confusion.",
+    habits:[
+      "Seeing the pattern clearly but feeling alone in seeing it",
+      "Withdrawing to think rather than talking it through",
+      "Journaling more than talking to people about it",
+      "Insight arriving faster than the words to share it",
+      "A subtle sense of being 'ahead' of the people around you"
+    ],
+    prompt:"Who is one person you could actually say this insight out loud to, today?" },
+  { n:8, canonical:"VESSEL OF GROUNDING", human:"The Permanence Trap",
+    essence:"Two chambers: the Illusion of Arrival (this good thing is permanent) and the Illusion of Permanence " +
+      "(this bad thing is permanent). Both are the same trap — mistaking a state for a fact.",
+    habits:[
+      "Insisting 'this is just how it is now,' good or bad",
+      "Defending a conclusion more than the evidence for it",
+      "Feeling either falsely triumphant or falsely stuck",
+      "Resisting new information that would complicate a settled story",
+      "A rigid certainty that doesn't quite match how it feels in your body"
+    ],
+    prompt:"What would you have to admit if this turned out to be temporary?" },
+  { n:9, canonical:"TRANSPARENCY OF THE GUIDE", human:"Dissolution & Handoff",
+    essence:"Grip loosening, for better or worse. A closing stage, not a final one — it feeds back into stage 0.",
+    habits:[
+      "Things loosening their grip, for better or worse",
+      "Wanting to document, teach, or pass on what happened",
+      "A felt readiness to let a chapter close, without a next one lined up",
+      "Reduced need to defend how things turned out",
+      "A pull toward rest before 'starting over'"
+    ],
+    prompt:"What are you ready to let end, even without knowing what starts next?" },
+];
+const stageByN = n => STAGES[n];
+
+/* ============================================================
+   QUOTES — public-domain sources only (Tao Te Ching trans. James
+   Legge 1891, Meditations trans. George Long 1862, Enchiridion
+   trans. Elizabeth Carter 1758, KJV Bible, Heraclitus fragments).
+   Picked deterministically from the input text, not claimed to be
+   "understood" by anything — see the math panel for how.
+   ============================================================ */
+const QUOTES = {
+  0:[{text:"Attain to utmost emptiness; hold firm to stillness.", author:"Lao Tzu", source:"Tao Te Ching, ch. 16"},
+     {text:"To every thing there is a season, and a time to every purpose under heaven.", author:"Ecclesiastes 3:1", source:"KJV"}],
+  1:[{text:"A journey of a thousand miles begins with a single step.", author:"Lao Tzu", source:"Tao Te Ching, ch. 64"},
+     {text:"Waste no more time arguing what a good man should be. Be one.", author:"Marcus Aurelius", source:"Meditations"}],
+  2:[{text:"And God divided the light from the darkness.", author:"Genesis 1:4", source:"KJV"},
+     {text:"The best revenge is to be unlike him who performed the injury.", author:"Marcus Aurelius", source:"Meditations"}],
+  3:[{text:"It does not matter how slowly you go as long as you do not stop.", author:"attrib. Confucius", source:"traditional"},
+     {text:"First say to yourself what you would be; and then do what you have to do.", author:"Epictetus", source:"Enchiridion"}],
+  4:[{text:"The impediment to action advances action. What stands in the way becomes the way.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"He who knows he has enough is rich.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"}],
+  5:[{text:"You have power over your mind, not outside events. Realize this, and you will find strength.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"It's not what happens to you, but how you react to it that matters.", author:"attrib. Epictetus", source:"traditional"}],
+  6:[{text:"The highest good is like water. Water benefits all things and does not compete.", author:"Lao Tzu", source:"Tao Te Ching, ch. 8"},
+     {text:"That which is not good for the swarm is not good for the bee.", author:"Marcus Aurelius", source:"Meditations"}],
+  7:[{text:"Knowing others is wisdom; knowing yourself is enlightenment.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"},
+     {text:"For in much wisdom is much grief: and he that increaseth knowledge increaseth sorrow.", author:"Ecclesiastes 1:18", source:"KJV"}],
+  8:[{text:"No man ever steps in the same river twice, for it's not the same river and he's not the same man.", author:"Heraclitus", source:"Fragments"},
+     {text:"Everything that exists is in a manner the seed of that which will be.", author:"Marcus Aurelius", source:"Meditations"}],
+  9:[{text:"The hard and stiff will be broken. The soft and supple will prevail.", author:"Lao Tzu", source:"Tao Te Ching, ch. 76"},
+     {text:"A time to be born, and a time to die; a time to plant, and a time to pluck up that which is planted.", author:"Ecclesiastes 3:2", source:"KJV"}],
+};
+
+/* ============================================================
+   MICRO-STAGE (FRACTAL DRILL-DOWN)
+   The project's own canonical reference (SAP_STAGE_CANONICAL_REFERENCE.md
+   §6) describes each of the 9 Gates as containing 9 micro-stages
+   (Gate.micro, e.g. 4.5), with .5 always a Threshold and .9 always a
+   Transparency/release point across every Gate — that structural
+   convention is real and shared. The 81 *unique* per-Gate micro-names
+   in that doc are not reproduced here (only .0/.5/.9 are actually
+   defined there; .1-.4/.6-.8 aren't). Instead this uses one honest,
+   generic micro layer applied the same way at every Gate, computed
+   with the exact same transparent word/letter digit-root method as
+   the macro stage — just run again on a smaller slice of your text.
+   ============================================================ */
+const MICRO_FLAVOR = {
+  0:"Opening / clearing", 1:"First movement", 2:"Taking shape", 3:"Pushing further",
+  4:"Nearly settled", 5:"Threshold — the pivot point within this stage", 6:"Past the pivot",
+  7:"Loosening", 8:"Gripping — watch for the trap here too",
+  9:"Transparency — the release point within this stage",
+};
+
+function digitRootPair(text){
+  const t = (text||"").trim();
+  const words = t.length ? t.split(/\s+/).filter(Boolean) : [];
+  const letters = (t.match(/\p{L}/gu) || []);
+  const wordCount = words.length, letterCount = letters.length;
+  if(wordCount===0) return null;
+  const content = digitalRoot(wordCount);
+  const container = digitalRoot(letterCount);
+  const sum = content + container;
+  const dr = digitalRoot(sum);
+  return { wordCount, letterCount, content, container, sum, dr };
+}
+
+// Picks a sub-slice of the same text to drill into: the closing sentence
+// if there is more than one, otherwise the second half of the words.
+// Deterministic and disclosed — shown verbatim in the math panel.
+function extractFocusSlice(text){
+  const t = (text||"").trim();
+  const sentences = t.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean);
+  if(sentences.length >= 2) return sentences[sentences.length-1];
+  const words = t.split(/\s+/).filter(Boolean);
+  if(words.length >= 4) return words.slice(Math.ceil(words.length/2)).join(" ");
+  return t;
+}
+
+function computeMicro(fullText){
+  const slice = extractFocusSlice(fullText);
+  const pair = digitRootPair(slice);
+  if(!pair) return null;
+  return { sliceText: slice, ...pair, micro: pair.dr };
+}
+
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function pickQuote(stage, seed){
+  const arr = QUOTES[stage] || QUOTES[0];
+  const idx = hashStr(String(seed||stage)) % arr.length;
+  return arr[idx];
+}
+
+/* ============================================================
+   BREATHING — standard, well-known techniques (box breathing,
+   coherent breathing, 4-7-8, the physiological sigh, humming
+   exhale). Not proprietary to this project; picked per stage for
+   how they feel, not backed by a claim that they change outcomes.
+   ============================================================ */
+const BREATHING = {
+  0:{ name:"Extended-Exhale Rest Breath", cycles:5,
+      note:"A pause breath. Nothing to fix here — just noticing the space.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+  1:{ name:"Energizing Breath", cycles:6,
+      note:"A small lift in alertness, without tipping into urgency.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:2,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"}] },
+  2:{ name:"Box Breathing", cycles:4,
+      note:"An even breath with clean edges — mirrors the boundary you're drawing.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:4,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"},{label:"Hold",seconds:4,scale:"scale(0.85)"}] },
+  3:{ name:"Coherent Breathing", cycles:6,
+      note:"A steady, even breath — a rest from the push, not a reward for it.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  4:{ name:"4-7-8 Calming Breath", cycles:4,
+      note:"A well-known calming pattern — useful when 'stable' still feels tense.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hold",seconds:7,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.8)"}] },
+  5:{ name:"Physiological Sigh", cycles:3,
+      note:"A fast nervous-system reset, often used right before a hard decision.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:6,scale:"scale(0.8)"}] },
+  6:{ name:"Coherent Breathing", cycles:6,
+      note:"An even, resonant breath — matches a stage where things are clicking together.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  7:{ name:"Humming Exhale", cycles:5,
+      note:"Humming on the exhale stimulates the vagus nerve — brings insight back into the body.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hum, exhale",seconds:7,scale:"scale(0.85)"}] },
+  8:{ name:"Extended-Exhale Release", cycles:5,
+      note:"A release breath for when certainty is doing the gripping.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:8,scale:"scale(0.8)"}] },
+  9:{ name:"Extended-Exhale Rest Breath", cycles:6,
+      note:"A long, slow close — the exhale that lets a chapter end.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+};
+
+let breathTimer = null;
+function openBreathing(stageNum){
+  const b = BREATHING[stageNum];
+  document.getElementById("breathTitle").textContent = `Stage ${stageNum} — ${b.name}`;
+  document.getElementById("breathNote").textContent = b.note;
+  document.getElementById("breathOverlay").style.display = "flex";
+  document.getElementById("breathCircleInner").style.transform = "scale(1)";
+  clearTimeout(breathTimer);
+  breathTimer = setTimeout(()=>runBreathPhase(b, 0, 1), 400);
+}
+function closeBreathing(){
+  clearTimeout(breathTimer);
+  document.getElementById("breathOverlay").style.display = "none";
+}
+function runBreathPhase(b, phaseIdx, cycleNum){
+  if(cycleNum > b.cycles){
+    document.getElementById("breathPhase").textContent = "Done";
+    document.getElementById("breathCount").textContent = `Completed ${b.cycles} cycles.`;
+    document.getElementById("breathCircleInner").style.transitionDuration = "1.5s";
+    document.getElementById("breathCircleInner").style.transform = "scale(1)";
+    return;
+  }
+  const phase = b.pattern[phaseIdx];
+  const circle = document.getElementById("breathCircleInner");
+  document.getElementById("breathPhase").textContent = phase.label;
+  document.getElementById("breathCount").textContent = `Cycle ${cycleNum} of ${b.cycles}`;
+  circle.style.transitionDuration = phase.seconds + "s";
+  circle.style.transform = phase.scale;
+  breathTimer = setTimeout(()=>{
+    const nextIdx = (phaseIdx + 1) % b.pattern.length;
+    const nextCycle = nextIdx === 0 ? cycleNum + 1 : cycleNum;
+    runBreathPhase(b, nextIdx, nextCycle);
+  }, phase.seconds * 1000);
+}
+
+// Ported from engine/container_rule_engine.py — kept for the "show the math" panel.
+const MAGNETIC_DRAG = {0:0,1:20,2:15,3:90,4:40,5:60,6:90,7:50,8:100,9:0};
+const FLUX_CLASS = {0:"VOID",1:"SEED",2:"POLARITY_FORGE",3:"MAGNETIC_POLE_POSITIVE",4:"EQUILIBRIUM",
+  5:"THRESHOLD",6:"MAGNETIC_POLE_NEGATIVE",7:"DISTILLATION_DRIFT",8:"HIGH_VOLTAGE_CONTAINMENT",9:"SLIP_STREAM_AXIS"};
+const CANONICAL_PAIRS = {1:[9,1],2:[1,8],3:[2,7],4:[3,6],5:[4,5],6:[5,4],7:[6,3],8:[7,2],9:[8,1]};
+
+// Inversion Principle, ported verbatim from engine/container_rule_engine.py's
+// INVERSION table. This is a labeling convention (odd stage number = physically
+// unstable/consciously stable, even = the reverse, stage 0 = neutral) — a real,
+// consistent part of this project's vocabulary, not a separate measurement.
+const INVERSION = {
+  0:{physical:"Neutral",conscious:"Neutral"}, 1:{physical:"Unstable",conscious:"Stable"},
+  2:{physical:"Stable",conscious:"Unstable"}, 3:{physical:"Unstable",conscious:"Stable"},
+  4:{physical:"Stable",conscious:"Unstable"}, 5:{physical:"Unstable",conscious:"Stable"},
+  6:{physical:"Stable",conscious:"Unstable"}, 7:{physical:"Unstable",conscious:"Stable"},
+  8:{physical:"Stable",conscious:"Unstable"}, 9:{physical:"Unstable",conscious:"Stable"},
+};
+function inversionHTML(stage){
+  const inv = INVERSION[stage];
+  return `<div style="margin-top:10px; font-size:.82rem; color:var(--text-dim);">
+    <b style="color:var(--text)">Inversion:</b> physically ${inv.physical.toLowerCase()}, consciously ${inv.conscious.toLowerCase()}
+    <span style="color:var(--text-faint)"> — ${stage===0 ? "the void carries neither charge" : (stage%2===1 ? "odd-numbered stages read as outwardly shaky but inwardly settled" : "even-numbered stages read as outwardly settled but inwardly unsettled")}</span>
+  </div>`;
+}
+
+// Stage 5 three-way fork, adapted from container_rule_engine.py's own Stage 5
+// signal text. Deliberately NOT computing the sigmoid P(success)/P(regression)
+// formula from the canonical doc — those weights were never fit to real
+// outcomes, so a percentage here would be invented precision, not a result.
+function stage5ForkHTML(){
+  return `<div class="banner" style="margin-top:14px;">
+    <b>Stage 5 is a fork, not just a number.</b> This project's own model treats Stage 5 as the one point
+    where the whole trajectory can still reverse — every other stage runs forward once you're through it.
+    Three directions the framework names: <b>Advance</b> (commit and push through), <b>Freeze / Regress</b>
+    (consciously step back rather than force it), or <b>Crisis</b> (forced collapse if you push without
+    being ready). There's a published-looking formula for the odds of each in this project's source docs —
+    we're not computing it here, because its weights were never fit to real outcomes, and a percentage
+    would just be false confidence wearing a decimal point. Use the prompt below instead.
+  </div>`;
+}
+
+function digitalRoot(n){
+  n = Math.abs(Math.trunc(n));
+  if(n===0) return 0;
+  const r = n % 9;
+  return r===0 ? 9 : r;
+}
+
+function stageColor(n){
+  const hue = (n*36)%360;
+  return `hsl(${hue},55%,58%)`;
+}
+
+function computeReading(text){
+  const t = (text||"").trim();
+  const pair = digitRootPair(t);
+  if(!pair) return null;
+  const { wordCount, letterCount, content, container, sum, dr } = pair;
+  const stage = dr; // dr of two 1-9 digits is always 1-9
+  const resonance = dr === 9;
+  const canon = CANONICAL_PAIRS[stage];
+  const onCanonical = canon && canon[0]===content && canon[1]===container;
+  const micro = computeMicro(t);
+  // Nano level (729-equivalent): the same formula run a third time, on a
+  // smaller slice of the micro slice. Optional deeper resolution, not shown
+  // by default — see the "zoom deeper" toggle in the math panel.
+  const nano = micro ? computeMicro(micro.sliceText) : null;
+  return { wordCount, letterCount, content, container, sum, dr, stage, resonance, onCanonical,
+    drag: MAGNETIC_DRAG[stage], flux: FLUX_CLASS[stage], quote: pickQuote(stage, t),
+    micro, nano, notation: micro ? `${stage}.${micro.micro}` : `${stage}`,
+    notation3: (micro && nano) ? `${stage}.${micro.micro}.${nano.micro}` : null };
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORAGE_KEY = "kairos_reflection_journal_v1";
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.warn("Could not load saved data", e); }
+  return { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+}
+let STATE = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(36).slice(2))); }
+function fmtDate(ts){ const d = new Date(ts); return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) + " " + d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); }
+
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 1800);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("active", s.id==="tab-"+name));
+  if(name==="cycle") renderCycleTab();
+  if(name==="habits") renderHabitsTab();
+  if(name==="guide") renderGuide();
+  if(name==="scan") renderScanHistory();
+  if(name==="home") renderHomeStats();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+
+/* ============================================================
+   DISCLAIMER BANNER
+   ============================================================ */
+function dismissBanner(){
+  document.getElementById("disclaimerBanner").style.display="none";
+  localStorage.setItem("kairos_banner_dismissed","1");
+}
+if(localStorage.getItem("kairos_banner_dismissed")) {
+  document.addEventListener("DOMContentLoaded", ()=>{
+    document.getElementById("disclaimerBanner").style.display="none";
+  });
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHomeStats(){
+  const p = STATE.patternEntries.length, a = STATE.areas.length, c = STATE.checkins.length, h = STATE.habitLogs.length;
+  const streak = computeStreakDays();
+  document.getElementById("homeStats").innerHTML = `
+    ${streak > 0 ? `<div class="streak-pill">🔥 ${streak} day${streak===1?"":"s"} in a row</div>` : ""}
+    <div class="row">
+      <div class="card tight"><b>${p}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Pattern Scan entries</span></div>
+      <div class="card tight"><b>${a}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Life areas tracked</span></div>
+      <div class="card tight"><b>${c}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Cycle check-ins</span></div>
+      <div class="card tight"><b>${h}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Habit logs</span></div>
+    </div>`;
+  renderAISettingsStatus();
+  const urlInput = document.getElementById("aiBackendUrl");
+  if(urlInput && !urlInput.value) urlInput.value = getBackendURL();
+}
+
+function exportAll(){
+  downloadJSON(STATE, "kairos-reflection-journal-all.json");
+}
+function exportJournal(kind){
+  const map = { pattern:"patternEntries", cycle:["areas","checkins"], habits:"habitLogs" };
+  let data;
+  if(kind==="cycle") data = { areas: STATE.areas, checkins: STATE.checkins };
+  else data = { [map[kind]]: STATE[map[kind]] };
+  downloadJSON(data, `kairos-${kind}-journal.json`);
+}
+function downloadJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function clearAllData(){
+  if(confirm("This deletes every entry in all three journals from this browser. This can't be undone. Export first if you want a backup. Continue?")){
+    STATE = { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+    saveState();
+    renderHomeStats(); renderScanHistory(); renderCycleTab(); renderHabitsTab();
+    showToast("All data cleared");
+  }
+}
+
+/* ============================================================
+   PATTERN SCAN
+   ============================================================ */
+function stageBadgeHTML(n){
+  return `<span class="stage-badge" style="background:${stageColor(n)}"><span class="stage-dot"></span>Stage ${n} — ${stageByN(n).canonical}</span>`;
+}
+
+function readingHTML(reading, forEntryId){
+  if(!reading){
+    return `<div class="empty">Enter some text to scan.</div>`;
+  }
+  const s = stageByN(reading.stage);
+  const m = reading.micro;
+  const n = reading.nano;
+  return `
+    <div class="reading">
+      ${stageBadgeHTML(reading.stage)}
+      <div class="stagename">${s.human} <span style="color:var(--text-faint); font-weight:400; font-size:.85rem;">(notation ${reading.notation})</span></div>
+      <div class="human">${s.essence}</div>
+      ${inversionHTML(reading.stage)}
+      <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
+        <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      </div>
+      <div class="prompt-box">${s.prompt}</div>
+      ${reading.stage===5 ? stage5ForkHTML() : ""}
+      ${m ? `
+      <div style="margin-top:14px; font-size:.85rem; color:var(--text-dim);">
+        <b style="color:var(--text)">Micro-position ${reading.notation}:</b> ${MICRO_FLAVOR[m.micro]}
+        — drawn from your closing line: <i>"${escapeHTML(truncate(m.sliceText,120))}"</i>
+      </div>` : ""}
+      <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
+      <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
+      <details class="math">
+        <summary>Show the math</summary>
+        <table>
+          <tr><td>Word count → digit</td><td>${reading.wordCount} → ${reading.content}</td></tr>
+          <tr><td>Letter count → digit</td><td>${reading.letterCount} → ${reading.container}</td></tr>
+          <tr><td>Sum</td><td>${reading.content} + ${reading.container} = ${reading.sum}</td></tr>
+          <tr><td>Digital root (macro stage)</td><td>${reading.dr}</td></tr>
+          <tr><td>"Harmonic resonance"</td><td>${reading.resonance ? "Yes (digital root = 9)" : "No"}</td></tr>
+          <tr><td>Flux class label</td><td>${reading.flux}</td></tr>
+          <tr><td>Magnetic drag label</td><td>${reading.drag}%</td></tr>
+          <tr><td>Inversion (physical / conscious)</td><td>${INVERSION[reading.stage].physical} / ${INVERSION[reading.stage].conscious}</td></tr>
+          ${m ? `
+          <tr><td>Micro slice used</td><td>"${escapeHTML(truncate(m.sliceText,80))}"</td></tr>
+          <tr><td>Micro word/letter → digit</td><td>${m.wordCount}→${m.content}, ${m.letterCount}→${m.container}</td></tr>
+          <tr><td>Digital root (micro stage)</td><td>${m.micro}</td></tr>
+          ` : ""}
+        </table>
+        <p style="margin-top:8px;">These labels come from this project's own internal vocabulary (the Container
+        Rule engine). They describe the arithmetic, not a property of your text. Any text of similar length lands
+        on a digit-root the same way — "resonance" (digital root 9) shows up whenever the word-digit and
+        letter-digit happen to add to a multiple of 9, which is common by construction, not rare. The micro digit
+        is the exact same formula run again on the slice shown above — a real recursive drill-down, not a
+        different or more precise method.</p>
+      </details>
+      ${m && n ? `
+      <details class="math" style="margin-top:6px;">
+        <summary>Zoom deeper (nano-position ${reading.notation3})</summary>
+        <p>The same formula run a third time, on a smaller slice again: "<i>${escapeHTML(truncate(n.sliceText,70))}</i>" → digit ${n.micro}
+          (${MICRO_FLAVOR[n.micro]}).</p>
+        <p style="color:var(--text-faint)">Offered as extra resolution for people who want to zoom further — like a
+          finer-grained map, not a more accurate one. The same "this math finds a pattern in anything" caveat
+          applies at every zoom level; going deeper doesn't make it more true, just more granular.</p>
+      </details>` : ""}
+    </div>`;
+}
+
+function runScan(){
+  const text = document.getElementById("scanText").value;
+  const domain = document.getElementById("scanDomain").value;
+  const reading = computeReading(text);
+  if(reading){
+    AI_CACHE["live"] = {
+      stage: reading.stage,
+      canonicalName: CANONICAL_STAGE_NAMES[reading.stage],
+      text, domain,
+      data: null, thread: [],
+    };
+  }
+  document.getElementById("scanResult").innerHTML = reading ? (
+    readingHTML(reading) +
+    aiSectionHTML("live") +
+    `<label>Your reflection (optional)</label>
+     <textarea id="scanNote" placeholder="What actually comes up for you, reading this back?"></textarea>
+     <button class="btn" onclick="saveScanEntry()">Save to journal</button>`
+  ) : readingHTML(null);
+}
+
+function saveScanEntry(){
+  const text = document.getElementById("scanText").value;
+  const reading = computeReading(text);
+  if(!reading) return;
+  const entry = {
+    id: uid(), ts: Date.now(),
+    title: document.getElementById("scanTitle").value.trim(),
+    domain: document.getElementById("scanDomain").value,
+    text, reading,
+    note: (document.getElementById("scanNote")?.value || "").trim(),
+  };
+  const liveAI = AI_CACHE["live"];
+  if(liveAI && liveAI.data){
+    entry.ai = { data: liveAI.data, thread: liveAI.thread || [] };
+  }
+  delete AI_CACHE["live"];
+  STATE.patternEntries.unshift(entry);
+  saveState();
+  document.getElementById("scanText").value = "";
+  document.getElementById("scanTitle").value = "";
+  document.getElementById("scanResult").innerHTML = "";
+  renderScanHistory();
+  showToast("Saved to Pattern Scan journal");
+}
+
+function deleteScanEntry(id){
+  STATE.patternEntries = STATE.patternEntries.filter(e=>e.id!==id);
+  saveState(); renderScanHistory();
+}
+
+function renderScanHistory(){
+  const wrap = document.getElementById("scanHistory");
+  if(STATE.patternEntries.length===0){ wrap.innerHTML = `<div class="empty">No saved entries yet.</div>`; return; }
+  STATE.patternEntries.forEach(e=>{
+    AI_CACHE[e.id] = {
+      stage: e.reading.stage,
+      canonicalName: CANONICAL_STAGE_NAMES[e.reading.stage],
+      text: e.text, domain: e.domain,
+      data: e.ai ? e.ai.data : null,
+      thread: e.ai ? (e.ai.thread || []) : [],
+    };
+  });
+  wrap.innerHTML = STATE.patternEntries.map(e=>`
+    <div class="entry">
+      <div class="meta">
+        ${stageBadgeHTML(e.reading.stage)}
+        <span style="color:var(--text-faint)">${e.reading.notation||e.reading.stage}</span>
+        <span>${fmtDate(e.ts)}</span>
+        ${e.domain ? `<span>· ${e.domain}</span>` : ""}
+      </div>
+      ${e.title ? `<b>${escapeHTML(e.title)}</b>` : ""}
+      <div class="body">${escapeHTML(truncate(e.text, 240))}</div>
+      ${e.note ? `<div class="note">${escapeHTML(e.note)}</div>` : ""}
+      ${e.reading.quote ? `<div class="quote-box">"${e.reading.quote.text}"<cite>— ${e.reading.quote.author}, ${e.reading.quote.source}</cite></div>` : ""}
+      ${aiSectionHTML(e.id)}
+      <div class="entry-actions">
+        <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${e.reading.stage})">🫁 Breathe (${BREATHING[e.reading.stage].name})</button>
+        <button class="btn secondary small" onclick="deleteScanEntry('${e.id}')">Delete</button>
+      </div>
+    </div>`).join("");
+}
+
+function escapeHTML(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function truncate(s,n){ return s.length>n ? s.slice(0,n)+"…" : s; }
+
+/* ============================================================
+   KAIROS AI — optional backend-powered reading enrichment.
+   Off by default (no backend URL saved = fully local app).
+   Stage classification never happens here; the backend only
+   writes narrative color around a stage already decided by the
+   digit-root math above.
+   ============================================================ */
+const AI_BACKEND_KEY = "kairos_ai_backend_url";
+const AI_CACHE = {}; // aiKey -> { stage, canonicalName, text, domain, data, thread }
+
+function getBackendURL(){
+  return (localStorage.getItem(AI_BACKEND_KEY) || "").trim().replace(/\/+$/,"");
+}
+function saveBackendURL(){
+  const val = (document.getElementById("aiBackendUrl").value || "").trim().replace(/\/+$/,"");
+  if(val) localStorage.setItem(AI_BACKEND_KEY, val);
+  else localStorage.removeItem(AI_BACKEND_KEY);
+  renderAISettingsStatus();
+  showToast(val ? "Kairos AI connected" : "Kairos AI backend cleared");
+}
+function renderAISettingsStatus(){
+  const url = getBackendURL();
+  const el = document.getElementById("aiSettingsStatus");
+  if(!el) return;
+  el.textContent = url
+    ? `Connected to ${url}. "Ask Kairos to go deeper" will appear on readings.`
+    : "Not connected — readings will stay fully local and offline.";
+}
+function isAIConnected(){ return !!getBackendURL(); }
+
+// The canonical internal name used by the rest of this project (kept for
+// consistency with the API and README) for each stage index.
+const CANONICAL_STAGE_NAMES = {
+  0:"PLENARA", 1:"SPARK OF NAVIGATION", 2:"FORGE OF POLARITY", 3:"ENGINE OF EXPRESSION",
+  4:"CRUCIBLE OF EQUILIBRIUM", 5:"DYNAMO OF WILL", 6:"NEXUS OF HARMONY", 7:"LENS OF DISTILLATION",
+  8:"VESSEL OF GROUNDING", 9:"TRANSPARENCY OF THE GUIDE",
+};
+
+function aiSectionHTML(aiKey){
+  if(!isAIConnected()){
+    return `<div class="ai-status">Want a personalized narrative, a Trickster Take, and follow-up questions on
+      this reading? <a href="#" onclick="switchTab('home'); return false;">Connect Kairos AI</a> (optional).</div>`;
+  }
+  const cached = AI_CACHE[aiKey];
+  if(cached && cached.data){
+    return `<div id="ai-${aiKey}">${renderAIResultHTML(aiKey, cached.data, cached.thread||[])}</div>`;
+  }
+  return `<button class="ai-btn" id="ai-btn-${aiKey}" onclick="askKairosDeeper('${aiKey}')">✨ Ask Kairos to go deeper</button>
+    <div id="ai-${aiKey}"></div>`;
+}
+
+async function askKairosDeeper(aiKey){
+  const entry = AI_CACHE[aiKey];
+  if(!entry) return;
+  const btn = document.getElementById(`ai-btn-${aiKey}`);
+  const target = document.getElementById(`ai-${aiKey}`);
+  if(btn){ btn.disabled = true; btn.textContent = "Asking Kairos…"; }
+  target.innerHTML = `<div class="ai-status">Sending your text to Claude for a deeper reading…</div>`;
+  try{
+    const resp = await fetch(`${getBackendURL()}/reading`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: entry.stage,
+        canonical_name: entry.canonicalName,
+        text: entry.text,
+        domain: entry.domain || null,
+      }),
+    });
+    if(!resp.ok){
+      const errBody = await resp.text();
+      throw new Error(`${resp.status}: ${errBody.slice(0,200)}`);
+    }
+    const data = await resp.json();
+    entry.data = data;
+    entry.thread = [];
+    if(btn) btn.remove();
+    target.innerHTML = renderAIResultHTML(aiKey, data, []);
+    persistAIToSavedEntry(aiKey);
+  }catch(e){
+    target.innerHTML = `<div class="ai-status">Kairos couldn't reach the backend (${escapeHTML(String(e.message||e))}).
+      Check the backend address in Home → Kairos AI settings.</div>`;
+    if(btn){ btn.disabled = false; btn.textContent = "✨ Ask Kairos to go deeper"; }
+  }
+}
+
+function renderAIResultHTML(aiKey, data, thread){
+  const questionsHTML = (data.questions||[]).map((q,i)=>{
+    const alreadyAnswered = thread.some(t=>t.question===q);
+    if(alreadyAnswered) return "";
+    return `<button class="ai-q-btn" onclick="openAIAnswerBox('${aiKey}', ${JSON.stringify(i)})">${escapeHTML(q)}</button>`;
+  }).join("");
+  const threadHTML = thread.map(t=>`
+    <div class="turn">
+      <div class="q">${escapeHTML(t.question)}</div>
+      <div class="a">${escapeHTML(t.answer)}</div>
+      ${t.reply ? `<div class="reply">${escapeHTML(t.reply)}</div>` : ""}
+    </div>`).join("");
+  return `
+    <div class="ai-block">
+      <div class="ai-narrative">${escapeHTML(data.narrative)}</div>
+      <div class="trickster-box">
+        <span class="label">${escapeHTML(data.trickster_voice||"Trickster")}'s Take</span>
+        <div class="line">${escapeHTML(data.trickster_take)}</div>
+      </div>
+      <div class="ai-parallel">"${escapeHTML(data.parallel)}"<cite>— ${escapeHTML(data.parallel_source)}</cite></div>
+      <div class="ai-thread">${threadHTML}</div>
+      <div id="ai-answerbox-${aiKey}"></div>
+      <div class="ai-questions" id="ai-questions-${aiKey}">${questionsHTML}</div>
+      <button class="ai-btn secondary" onclick="showShareCard('${aiKey}')">📸 Make a share card</button>
+    </div>`;
+}
+
+function openAIAnswerBox(aiKey, qIndex){
+  const entry = AI_CACHE[aiKey];
+  if(!entry || !entry.data) return;
+  const q = entry.data.questions[qIndex];
+  const box = document.getElementById(`ai-answerbox-${aiKey}`);
+  box.innerHTML = `
+    <div style="margin-top:10px;">
+      <div class="q" style="font-size:.85rem; color:var(--text-dim); font-weight:600;">${escapeHTML(q)}</div>
+      <div class="ai-answer-box">
+        <textarea id="ai-answer-${aiKey}" placeholder="Your answer..."></textarea>
+        <button class="btn small" style="margin-top:0" onclick="submitAIAnswer('${aiKey}', ${JSON.stringify(qIndex)})">Send</button>
+      </div>
+    </div>`;
+}
+
+async function submitAIAnswer(aiKey, qIndex){
+  const entry = AI_CACHE[aiKey];
+  if(!entry || !entry.data) return;
+  const question = entry.data.questions[qIndex];
+  const answerEl = document.getElementById(`ai-answer-${aiKey}`);
+  const answer = (answerEl?.value || "").trim();
+  if(!answer){ showToast("Write a short answer first"); return; }
+  entry.thread = entry.thread || [];
+  const turn = { question, answer, reply: "" };
+  entry.thread.push(turn);
+  document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread) ;
+  try{
+    const resp = await fetch(`${getBackendURL()}/reading/elaborate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: entry.stage,
+        canonical_name: entry.canonicalName,
+        original_text: entry.text,
+        thread: entry.thread.map(t=>({question:t.question, answer:t.answer})),
+      }),
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    turn.reply = data.reply || "";
+    if(data.next_question) entry.data.questions.push(data.next_question);
+    document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread);
+    persistAIToSavedEntry(aiKey);
+  }catch(e){
+    turn.reply = "(Kairos couldn't respond just now — try again in a moment.)";
+    document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread);
+  }
+}
+
+// If this aiKey belongs to a saved journal entry, write the AI content back
+// into STATE so it survives a reload. Live, unsaved scan previews (aiKey
+// "live") are not persisted until the reader taps "Save to journal".
+function persistAIToSavedEntry(aiKey){
+  const e = STATE.patternEntries.find(x=>x.id===aiKey);
+  if(e){
+    e.ai = { data: AI_CACHE[aiKey].data, thread: AI_CACHE[aiKey].thread };
+    saveState();
+  }
+}
+
+function showShareCard(aiKey){
+  const entry = AI_CACHE[aiKey];
+  if(!entry) return;
+  const wrap = document.getElementById(`share-${aiKey}`) || (()=>{
+    const d = document.createElement("div");
+    d.id = `share-${aiKey}`;
+    d.style.marginTop = "14px";
+    document.getElementById(`ai-${aiKey}`).appendChild(d);
+    return d;
+  })();
+  const handle = stageByN(entry.stage) ? stageByN(entry.stage).human : `Stage ${entry.stage}`;
+  const line = entry.data.trickster_take || entry.data.narrative || "";
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080; canvas.height = 1080;
+  canvas.id = `canvas-${aiKey}`;
+  canvas.style.maxWidth = "100%";
+  canvas.style.borderRadius = "10px";
+  canvas.style.border = "1px solid #39334c";
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0,0,0,1080);
+  grad.addColorStop(0, "#1b1826"); grad.addColorStop(1, "#14121c");
+  ctx.fillStyle = grad; ctx.fillRect(0,0,1080,1080);
+  ctx.fillStyle = "#e0b568";
+  ctx.font = "700 40px -apple-system, sans-serif";
+  ctx.fillText("KAIROS", 70, 110);
+  ctx.fillStyle = "#786f96";
+  ctx.font = "400 26px -apple-system, sans-serif";
+  ctx.fillText(`Stage ${entry.stage} — ${handle}`, 70, 160);
+  ctx.strokeStyle = "#39334c"; ctx.beginPath(); ctx.moveTo(70,190); ctx.lineTo(1010,190); ctx.stroke();
+  ctx.fillStyle = "#eae6f2";
+  ctx.font = "400 38px -apple-system, sans-serif";
+  wrapCanvasText(ctx, line, 70, 280, 940, 50);
+  ctx.fillStyle = "#786f96";
+  ctx.font = "italic 24px -apple-system, sans-serif";
+  ctx.fillText("kairos — find the pattern in anything", 70, 1000);
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = "kairos-reading.png";
+  link.className = "ai-btn secondary";
+  link.style.display = "inline-block";
+  link.textContent = "⬇ Download image";
+  wrap.innerHTML = "";
+  wrap.appendChild(canvas);
+  wrap.appendChild(document.createElement("br"));
+  wrap.appendChild(link);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = (text||"").split(" ");
+  let line = "";
+  for(let n=0; n<words.length; n++){
+    const test = line + words[n] + " ";
+    if(ctx.measureText(test).width > maxWidth && n > 0){
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+/* ============================================================
+   STREAK — counts distinct calendar days with any journal
+   activity (Pattern Scan, Cycle check-in, or Habit log).
+   ============================================================ */
+function computeStreakDays(){
+  const days = new Set();
+  [...STATE.patternEntries, ...STATE.checkins, ...STATE.habitLogs].forEach(x=>{
+    if(x && x.ts) days.add(new Date(x.ts).toDateString());
+  });
+  if(days.size === 0) return 0;
+  let cursor = new Date();
+  if(!days.has(cursor.toDateString())){
+    // nothing logged yet today -- streak is still alive if yesterday has activity
+    cursor.setDate(cursor.getDate()-1);
+    if(!days.has(cursor.toDateString())) return 0;
+  }
+  let streak = 0;
+  while(days.has(cursor.toDateString())){
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return streak;
+}
+
+
+/* ============================================================
+   CYCLE JOURNAL
+   ============================================================ */
+let selectedAreaId = null;
+let checkinMode = "text";
+
+function addArea(){
+  const input = document.getElementById("newAreaName");
+  const name = input.value.trim();
+  if(!name) return;
+  const area = { id: uid(), name, createdTs: Date.now() };
+  STATE.areas.push(area);
+  saveState();
+  input.value = "";
+  selectedAreaId = area.id;
+  renderCycleTab();
+}
+
+function selectArea(id){
+  selectedAreaId = id;
+  checkinMode = "text";
+  renderCycleTab();
+}
+
+function deleteArea(id){
+  if(!confirm("Delete this life area and all its check-ins?")) return;
+  STATE.areas = STATE.areas.filter(a=>a.id!==id);
+  STATE.checkins = STATE.checkins.filter(c=>c.areaId!==id);
+  if(selectedAreaId===id) selectedAreaId=null;
+  saveState(); renderCycleTab();
+}
+
+function setCheckinMode(mode){
+  checkinMode = mode;
+  document.getElementById("checkinTextMode").style.display = mode==="text" ? "" : "none";
+  document.getElementById("checkinManualMode").style.display = mode==="manual" ? "" : "none";
+  document.getElementById("modeTextBtn").style.borderColor = mode==="text" ? "var(--accent)" : "var(--border)";
+  document.getElementById("modeManualBtn").style.borderColor = mode==="manual" ? "var(--accent)" : "var(--border)";
+}
+
+function saveCheckin(){
+  if(!selectedAreaId) return;
+  let stage, text = "", quote, notation, micro = null;
+  if(checkinMode==="text"){
+    text = document.getElementById("checkinText").value;
+    const reading = computeReading(text);
+    if(!reading){ showToast("Write a sentence or two first"); return; }
+    stage = reading.stage;
+    quote = reading.quote;
+    notation = reading.notation;
+    micro = reading.micro;
+  } else {
+    stage = parseInt(document.getElementById("checkinManualStage").value, 10);
+    quote = pickQuote(stage, "manual-" + Date.now());
+    const microVal = document.getElementById("checkinManualMicro").value;
+    notation = microVal !== "" ? `${stage}.${microVal}` : `${stage}`;
+    micro = microVal !== "" ? { micro: parseInt(microVal,10), sliceText: "(self-selected)" } : null;
+  }
+  const checkin = {
+    id: uid(), ts: Date.now(), areaId: selectedAreaId, mode: checkinMode,
+    text, stage, notation, micro, quote, note: document.getElementById("checkinNote").value.trim(),
+  };
+  STATE.checkins.push(checkin);
+  saveState();
+  document.getElementById("checkinText").value = "";
+  document.getElementById("checkinNote").value = "";
+  document.getElementById("checkinManualMicro").value = "";
+  showToast("Check-in saved");
+  renderCycleTab();
+}
+
+function deleteCheckin(id){
+  STATE.checkins = STATE.checkins.filter(c=>c.id!==id);
+  saveState(); renderCycleTab();
+}
+
+function areaCheckins(areaId){
+  return STATE.checkins.filter(c=>c.areaId===areaId).sort((a,b)=>a.ts-b.ts);
+}
+
+// Ported from engine/container_rule_engine.py's detect_trap_accumulation:
+// counts how many of the user's own check-ins for this area landed on Stage 8,
+// and how many landed there consecutively — literal counting of their own
+// entries, same as the repeat-stage insight above it.
+function computeTrapRisk(list){
+  const s8total = list.filter(c=>c.stage===8).length;
+  let consecutive = 0;
+  for(let i=list.length-1;i>=0;i--){
+    if(list[i].stage===8) consecutive++; else break;
+  }
+  let risk = "NORMAL";
+  if(consecutive>=3) risk="CRITICAL";
+  else if(consecutive===2) risk="HIGH";
+  else if(s8total>=3) risk="ELEVATED";
+  return { s8total, consecutive, risk };
+}
+
+// Real Shannon entropy over the stages the user has actually logged for this
+// area — not a claim about "signal vs. noise" in any text, just a measure of
+// how consistently their own self-reports cluster on one stage vs. scatter
+// across many. Normalized against log2(10), the max possible spread.
+function stageEntropy(stages){
+  if(stages.length < 4) return null;
+  const freq = {};
+  stages.forEach(s=>freq[s]=(freq[s]||0)+1);
+  let H = 0;
+  Object.values(freq).forEach(c=>{ const p=c/stages.length; H -= p*Math.log2(p); });
+  const Hnorm = H / Math.log2(10);
+  let label;
+  if(Hnorm < 0.3) label = "tightly clustered — a consistent pattern";
+  else if(Hnorm < 0.6) label = "somewhat varied";
+  else label = "scattered across many stages — no dominant pattern yet";
+  return { H: +H.toFixed(2), Hnorm: +Hnorm.toFixed(2), label };
+}
+
+function renderCycleTab(){
+  // area chips
+  const chipsWrap = document.getElementById("areaChips");
+  if(STATE.areas.length===0){
+    chipsWrap.innerHTML = `<div class="empty">Add a life area above to start tracking it.</div>`;
+  } else {
+    chipsWrap.innerHTML = STATE.areas.map(a=>`
+      <span class="area-chip ${a.id===selectedAreaId?'selected':''}" onclick="selectArea('${a.id}')">
+        ${escapeHTML(a.name)} <small style="color:var(--text-faint)">(${areaCheckins(a.id).length})</small>
+      </span>`).join("") +
+      (selectedAreaId ? `<button class="btn danger small" style="margin-left:6px" onclick="deleteArea('${selectedAreaId}')">Delete selected area</button>` : "");
+  }
+
+  const checkinCard = document.getElementById("checkinCard");
+  if(selectedAreaId){
+    const area = STATE.areas.find(a=>a.id===selectedAreaId);
+    checkinCard.style.display = "";
+    document.getElementById("checkinAreaLabel").textContent = "Check in: " + (area ? area.name : "");
+    const sel = document.getElementById("checkinManualStage");
+    if(sel.children.length===0){
+      sel.innerHTML = STAGES.map(s=>`<option value="${s.n}">Stage ${s.n} — ${s.canonical} (${s.human})</option>`).join("");
+    }
+    const microSel = document.getElementById("checkinManualMicro");
+    if(microSel.children.length===0){
+      microSel.innerHTML = `<option value="">— not specified —</option>` +
+        Array.from({length:10},(_,i)=>`<option value="${i}">${i} — ${MICRO_FLAVOR[i]}</option>`).join("");
+    }
+    setCheckinMode(checkinMode);
+  } else {
+    checkinCard.style.display = "none";
+  }
+
+  renderAreaHistory();
+}
+
+function renderAreaHistory(){
+  const wrap = document.getElementById("areaHistoryWrap");
+  if(STATE.areas.length===0){ wrap.innerHTML = ""; return; }
+
+  wrap.innerHTML = STATE.areas.map(area=>{
+    const list = areaCheckins(area.id);
+    if(list.length===0){
+      return `<h3>${escapeHTML(area.name)}</h3><div class="card"><div class="empty">No check-ins yet.</div></div>`;
+    }
+    const recent = list.slice(-8);
+    const freq = {};
+    recent.forEach(c=>freq[c.stage]=(freq[c.stage]||0)+1);
+    const maxStage = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+    let streak = 0;
+    for(let i=list.length-1;i>0;i--){
+      if(list[i].stage===list[i-1].stage) streak++; else break;
+    }
+    const insights = [];
+    if(maxStage && maxStage[1] >= 3){
+      insights.push(`Stage ${maxStage[0]} — ${stageByN(+maxStage[0]).canonical} appears in ${maxStage[1]} of your last ${recent.length} check-ins here.`);
+    }
+    if(streak >= 1){
+      insights.push(`You've logged the same stage ${streak+1} check-ins in a row.`);
+    }
+    const entropy = stageEntropy(recent.map(c=>c.stage));
+    if(entropy){
+      insights.push(`Consistency: ${entropy.label} (entropy ${entropy.Hnorm} of a possible 1.0, over your last ${recent.length} check-ins).`);
+    }
+    const trap = computeTrapRisk(list);
+    return `
+      <h3>${escapeHTML(area.name)}</h3>
+      <div class="card">
+        ${insights.length ? `<div class="banner" style="margin-bottom:${trap.risk!=="NORMAL"?"8px":"14px"};">${insights.join("<br>")}</div>` : ""}
+        ${trap.risk!=="NORMAL" ? `<div class="banner" style="margin-bottom:14px; border-color:var(--danger); color:${trap.risk==="CRITICAL"?"var(--danger)":"var(--text-dim)"};">
+          <b style="color:var(--danger)">Trap risk: ${trap.risk}</b> — ${trap.consecutive>=2
+            ? `Stage 8 logged ${trap.consecutive} check-ins in a row here.`
+            : `Stage 8 logged ${trap.s8total} times in this area's history.`}
+          This project's own model treats repeated Stage 8 as compounding (1.45× per repeat) rather than a
+          plateau — worth noticing what's making the current story hard to update.
+        </div>` : ""}
+        ${list.slice().reverse().map(c=>`
+          <div class="entry">
+            <div class="meta">
+              ${stageBadgeHTML(c.stage)}
+              <span style="color:var(--text-faint)">${c.notation||c.stage}</span>
+              <span>${fmtDate(c.ts)}</span>
+              <span>· ${c.mode==="manual"?"self-selected":"from text"}</span>
+            </div>
+            ${c.text ? `<div class="body">${escapeHTML(truncate(c.text,200))}</div>` : ""}
+            ${c.note ? `<div class="note">${escapeHTML(c.note)}</div>` : ""}
+            ${c.quote ? `<div class="quote-box">"${c.quote.text}"<cite>— ${c.quote.author}, ${c.quote.source}</cite></div>` : ""}
+            <div class="entry-actions">
+              <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${c.stage})">🫁 Breathe (${BREATHING[c.stage].name})</button>
+              <button class="btn secondary small" onclick="deleteCheckin('${c.id}')">Delete</button>
+            </div>
+          </div>`).join("")}
+      </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   HABIT LOG
+   ============================================================ */
+function renderHabitChecklist(){
+  const el = document.getElementById("habitChecklist");
+  el.innerHTML = STAGES.map(s=>`
+    <details class="habit-group">
+      <summary><span class="stage-dot" style="color:${stageColor(s.n)}"></span> Stage ${s.n} — ${s.canonical} <span style="color:var(--text-faint);font-weight:400">(${s.human})</span></summary>
+      ${s.habits.map((h,i)=>`
+        <label class="habit-check">
+          <input type="checkbox" value="s${s.n}_h${i}" data-stage="${s.n}">
+          <span>${h}</span>
+        </label>`).join("")}
+    </details>`).join("");
+}
+
+function renderHabitAreaSelect(){
+  const sel = document.getElementById("habitArea");
+  sel.innerHTML = `<option value="">— none —</option>` +
+    STATE.areas.map(a=>`<option value="${a.id}">${escapeHTML(a.name)}</option>`).join("");
+}
+
+function saveHabitLog(){
+  const checked = Array.from(document.querySelectorAll("#habitChecklist input:checked"));
+  if(checked.length===0){ showToast("Check at least one habit"); return; }
+  const log = {
+    id: uid(), ts: Date.now(),
+    areaId: document.getElementById("habitArea").value || null,
+    habits: checked.map(c=>({ id:c.value, stage: parseInt(c.dataset.stage,10) })),
+    note: document.getElementById("habitNote").value.trim(),
+  };
+  STATE.habitLogs.unshift(log);
+  saveState();
+  checked.forEach(c=>c.checked=false);
+  document.getElementById("habitNote").value = "";
+  showToast("Habit log saved");
+  renderHabitsTab();
+}
+
+function deleteHabitLog(id){
+  STATE.habitLogs = STATE.habitLogs.filter(l=>l.id!==id);
+  saveState(); renderHabitsTab();
+}
+
+function renderHabitStats(){
+  const el = document.getElementById("habitStats");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">Log a few entries to see which stages recur most.</div>`; return; }
+  const tally = new Array(10).fill(0);
+  STATE.habitLogs.forEach(l=>l.habits.forEach(h=>tally[h.stage]++));
+  const max = Math.max(...tally, 1);
+  el.innerHTML = STAGES.map(s=>`
+    <div class="bar-row">
+      <div class="label">Stage ${s.n} — ${s.human}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(tally[s.n]/max*100)}%; background:${stageColor(s.n)}"></div></div>
+      <div class="count">${tally[s.n]}</div>
+    </div>`).join("");
+}
+
+function renderHabitHistory(){
+  const el = document.getElementById("habitHistory");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">No habit logs yet.</div>`; return; }
+  el.innerHTML = STATE.habitLogs.map(l=>{
+    const area = STATE.areas.find(a=>a.id===l.areaId);
+    return `
+      <div class="entry">
+        <div class="meta">
+          <span>${fmtDate(l.ts)}</span>
+          ${area ? `<span>· ${escapeHTML(area.name)}</span>` : ""}
+        </div>
+        <div class="body">${l.habits.map(h=>stageBadgeHTML(h.stage)).join(" ")}</div>
+        ${l.note ? `<div class="note">${escapeHTML(l.note)}</div>` : ""}
+        <div class="entry-actions"><button class="btn secondary small" onclick="deleteHabitLog('${l.id}')">Delete</button></div>
+      </div>`;
+  }).join("");
+}
+
+function renderHabitsTab(){
+  renderHabitChecklist();
+  renderHabitAreaSelect();
+  renderHabitStats();
+  renderHabitHistory();
+}
+
+/* ============================================================
+   STAGE GUIDE
+   ============================================================ */
+function renderGuide(){
+  document.getElementById("guideList").innerHTML = STAGES.map(s=>{
+    const b = BREATHING[s.n];
+    return `
+    <div class="guide-stage">
+      <h3>${stageBadgeHTML(s.n)} <span style="color:var(--text-dim); font-weight:400;">${s.human}</span></h3>
+      <p style="color:var(--text-dim); margin:4px 0 8px 0;">${s.essence}</p>
+      ${inversionHTML(s.n)}
+      <b style="font-size:.85rem; color:var(--text-dim); display:block; margin-top:10px;">Habits to watch for:</b>
+      <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      <div class="prompt-box">${s.prompt}</div>
+      ${QUOTES[s.n].map(q=>`<div class="quote-box">"${q.text}"<cite>— ${q.author}, ${q.source}</cite></div>`).join("")}
+      <button class="breathe-btn" onclick="openBreathing(${s.n})">🫁 ${b.name} (${b.cycles} cycles)</button>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderHomeStats();
+if(localStorage.getItem("kairos_banner_dismissed")){
+  document.getElementById("disclaimerBanner").style.display="none";
+}
+</script>
+</body>
+</html>

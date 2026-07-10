@@ -24,6 +24,20 @@ Configuration (environment variables, all optional):
   ANTHROPIC_API_KEY         Required if KAIROS_ENABLE_AI_SCORING is on.
   KAIROS_AI_SCORING_MODEL   Claude model for /score-nsdt. Defaults to
                             "claude-sonnet-5".
+  KAIROS_ENABLE_AI_READINGS "true" to turn on POST /reading and
+                            POST /elaborate (AI-deepened, consumer-facing
+                            readings via Claude -- narrative, a story/quote
+                            parallel, a Trickster Take, and follow-up
+                            questions). Off by default. See
+                            sap_kairos_ai_reading.py. Stage classification
+                            itself is NOT done here -- the caller supplies
+                            an already-determined stage (e.g. from the
+                            webapp's own digit-root arithmetic); this only
+                            generates the narrative layer around it.
+  ANTHROPIC_API_KEY         Also required for AI readings (shared with
+                            KAIROS_ENABLE_AI_SCORING).
+  KAIROS_AI_READING_MODEL   Claude model for /reading and /elaborate.
+                            Defaults to "claude-sonnet-5".
 """
 
 import os
@@ -39,6 +53,13 @@ from dataclasses import asdict
 from sap_kairos_bayesian import KairosBayesian
 from sap_kairos_session import KairosSession, KairosSnapshot
 from sap_kairos_ai_scoring import score_nsdt_from_notes, AIScoreError, is_ai_scoring_configured
+from sap_kairos_ai_reading import (
+    generate_ai_reading,
+    elaborate_reading,
+    AIReadingError,
+    is_ai_readings_configured,
+)
+from sap_kairos_public_content import DATA_HANDLING_NOTE
 
 # --- Configuration (env-driven, all backwards-compatible defaults) ---
 KAIROS_STORAGE_BACKEND = os.environ.get("KAIROS_STORAGE_BACKEND", "memory")
@@ -92,6 +113,32 @@ class KairosInput(BaseModel):
 class ScoreNSDTInput(BaseModel):
     notes: str
     system_id: Optional[str] = None
+
+
+class ReadingInput(BaseModel):
+    stage: int = Field(..., ge=0, le=9)
+    canonical_name: str
+    text: str
+    domain: Optional[str] = None
+
+    @field_validator('text')
+    @classmethod
+    def validate_text(cls, v):
+        if not v or not v.strip():
+            raise ValueError("text must not be empty")
+        return v
+
+
+class ThreadTurn(BaseModel):
+    question: str
+    answer: str
+
+
+class ElaborateInput(BaseModel):
+    stage: int = Field(..., ge=0, le=9)
+    canonical_name: str
+    original_text: str
+    thread: list[ThreadTurn] = Field(..., min_items=1)
 
 
 def get_or_create_session(system_id: str) -> KairosSession:
@@ -233,6 +280,63 @@ def score_nsdt(inp: ScoreNSDTInput):
         "are an unconfirmed interpretation -- see docs/NSDT_REFERENCE.md."
     )
     result["system_id"] = inp.system_id
+    return result
+
+
+@app.post("/reading")
+def get_ai_reading(inp: ReadingInput):
+    """AI-deepened, consumer-facing reading (see sap_kairos_ai_reading.py).
+
+    The stage is decided BEFORE this endpoint is called -- by the caller's
+    own deterministic arithmetic (the webapp's digit-root engine) or by
+    /analyze. This endpoint only generates the narrative layer on top of an
+    already-fixed stage: a short personalized narrative, a real story/quote
+    parallel, a Trickster Take, and 1-2 follow-up questions.
+
+    Disabled unless the operator has set KAIROS_ENABLE_AI_READINGS=true and
+    ANTHROPIC_API_KEY.
+    """
+    if not is_ai_readings_configured():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI-deepened readings are disabled on this server. "
+                "Set KAIROS_ENABLE_AI_READINGS=true and ANTHROPIC_API_KEY to enable it."
+            ),
+        )
+    try:
+        result = generate_ai_reading(inp.stage, inp.canonical_name, inp.text, inp.domain)
+    except AIReadingError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    result["disclosure"] = DATA_HANDLING_NOTE
+    return result
+
+
+@app.post("/reading/elaborate")
+def elaborate_ai_reading(inp: ElaborateInput):
+    """Continue a reading's follow-up thread (see sap_kairos_ai_reading.py).
+
+    Stateless: the full prior thread is supplied by the caller on every
+    call and nothing is stored server-side. Disabled under the same flag
+    as POST /reading.
+    """
+    if not is_ai_readings_configured():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI-deepened readings are disabled on this server. "
+                "Set KAIROS_ENABLE_AI_READINGS=true and ANTHROPIC_API_KEY to enable it."
+            ),
+        )
+    try:
+        result = elaborate_reading(
+            inp.stage,
+            inp.canonical_name,
+            inp.original_text,
+            [t.model_dump() for t in inp.thread],
+        )
+    except AIReadingError as e:
+        raise HTTPException(status_code=502, detail=str(e))
     return result
 
 
