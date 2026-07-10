@@ -69,6 +69,16 @@ approach for a therapist/coach populating `nsdt` by hand:
    confidence, spread-out posteriors are honest information, not noise to
    suppress.
 
+## AI-assisted scoring (optional, off by default)
+
+`POST /score-nsdt` (see main README) uses Claude to propose a vector from freeform notes, using
+exactly the axis table above (see `AXIS_DEFINITIONS` in `sap_kairos_ai_scoring.py` — keep the two
+in sync if you change either one). The model is deliberately not shown `STAGE_CENTROIDS` or any
+stage/chamber names, so it can't work backward from "what stage would this produce" — it only ever
+sees the same unconfirmed axis guesses documented above, and is told explicitly that they're
+unconfirmed. Output includes a confidence label and caveats, and is meant to be reviewed and
+adjusted by a practitioner, not submitted directly to `/analyze`.
+
 ## Where this is used elsewhere in this repo
 
 The Stage 8 chamber classifier added in this update

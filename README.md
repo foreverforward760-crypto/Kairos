@@ -75,6 +75,7 @@ Descent and ascent are not sequential. They are the same motion happening simult
 | POST | `/analyze` | Submit NSDT vector, get stage + therapeutic guidance |
 | GET | `/history/{system_id}` | Retrieve past snapshots |
 | POST | `/reset/{system_id}` | Clear session history |
+| POST | `/score-nsdt` | AI-assisted NSDT scoring from freeform notes (opt-in, see below) |
 | GET | `/health` | Health check |
 
 ---
@@ -134,6 +135,36 @@ All optional, read from the environment at startup:
 | `KAIROS_DATA_DIR` | `./kairos_data` | Directory for per-client session JSON when `KAIROS_STORAGE_BACKEND=file`. `system_id` is sanitized before being used in a filename, so this is safe against path traversal even with untrusted `system_id` input. |
 | `KAIROS_API_KEY` | unset | If set, every request except `/health` must send a matching `X-API-Key` header. If unset, the API is open — fine for local dev, not for anything network-reachable. |
 | `KAIROS_ALLOWED_ORIGINS` | unset | Comma-separated origins allowed to call this API from a browser (CORS). If unset, no CORS middleware is added at all — the safe default is that no browser can call this cross-origin. |
+
+## AI-Assisted NSDT Scoring (optional)
+
+`POST /score-nsdt` sends freeform session notes to Claude and gets back a *proposed* 5-axis NSDT
+vector with per-axis reasoning, a confidence label, and caveats — not a finished score. The
+practitioner reviews and adjusts it, then submits it to `/analyze` themselves; nothing in this
+path auto-submits anything.
+
+Two deliberate design choices:
+
+- **Off by default, one server-level switch.** The endpoint returns `503` unless the operator sets
+  both `KAIROS_ENABLE_AI_SCORING=true` and `ANTHROPIC_API_KEY`. There's no per-request flag —
+  turning this on is a decision for whoever runs the server, made once, not something a client can
+  opt into per call.
+- **Claude never sees the stage taxonomy.** The prompt (see `sap_kairos_ai_scoring.py`) only
+  contains the five axis definitions from `docs/NSDT_REFERENCE.md` — not `STAGE_CENTROIDS`, stage
+  names, or chamber logic. This keeps scoring (reading the notes) and classification (the
+  deterministic geometry engine) separate, so Claude can't reverse-engineer a "convenient" vector
+  from knowing what stage it would produce.
+
+```bash
+curl -X POST http://localhost:8002/score-nsdt \
+  -H "Content-Type: application/json" \
+  -d '{"notes": "Client kept saying '\''this is just how it is now'\'', resisted any reframe.", "system_id": "client_001"}'
+```
+
+Additional env vars: `KAIROS_ENABLE_AI_SCORING`, `ANTHROPIC_API_KEY`, and optionally
+`KAIROS_AI_SCORING_MODEL` (defaults to `claude-sonnet-5`). Since notes sent here leave your server
+and go to Anthropic's API, only enable this if that's acceptable for your data — same principle as
+any other third-party API call with client data in it.
 
 Example production-leaning run:
 

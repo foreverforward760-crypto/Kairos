@@ -18,6 +18,12 @@ Configuration (environment variables, all optional):
                             this API from a browser (CORS). If unset, no CORS
                             middleware is added (safe default: no browser
                             can call this cross-origin).
+  KAIROS_ENABLE_AI_SCORING  "true" to turn on POST /score-nsdt (AI-assisted
+                            NSDT scoring via Claude). Off by default. See
+                            sap_kairos_ai_scoring.py.
+  ANTHROPIC_API_KEY         Required if KAIROS_ENABLE_AI_SCORING is on.
+  KAIROS_AI_SCORING_MODEL   Claude model for /score-nsdt. Defaults to
+                            "claude-sonnet-5".
 """
 
 import os
@@ -32,6 +38,7 @@ from dataclasses import asdict
 
 from sap_kairos_bayesian import KairosBayesian
 from sap_kairos_session import KairosSession, KairosSnapshot
+from sap_kairos_ai_scoring import score_nsdt_from_notes, AIScoreError, is_ai_scoring_configured
 
 # --- Configuration (env-driven, all backwards-compatible defaults) ---
 KAIROS_STORAGE_BACKEND = os.environ.get("KAIROS_STORAGE_BACKEND", "memory")
@@ -80,6 +87,11 @@ class KairosInput(BaseModel):
             if val < 0.0 or val > 10.0:
                 raise ValueError(f"nsdt[{i}] out of range 0-10")
         return v
+
+
+class ScoreNSDTInput(BaseModel):
+    notes: str
+    system_id: Optional[str] = None
 
 
 def get_or_create_session(system_id: str) -> KairosSession:
@@ -190,6 +202,38 @@ def reset_session(system_id: str):
     if system_id in _sessions:
         del _sessions[system_id]
     return {"status": "reset", "system_id": system_id}
+
+
+@app.post("/score-nsdt", dependencies=[Depends(require_api_key)])
+def score_nsdt(inp: ScoreNSDTInput):
+    """AI-assisted NSDT scoring (see sap_kairos_ai_scoring.py).
+
+    Disabled unless the operator has set KAIROS_ENABLE_AI_SCORING=true and
+    ANTHROPIC_API_KEY. Returns a *proposed* vector with per-axis reasoning --
+    this never auto-submits to /analyze. The practitioner reviews and adjusts
+    before using it, same as a manually-scored vector.
+    """
+    if not is_ai_scoring_configured():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI-assisted NSDT scoring is disabled on this server. "
+                "Set KAIROS_ENABLE_AI_SCORING=true and ANTHROPIC_API_KEY to enable it."
+            ),
+        )
+    try:
+        result = score_nsdt_from_notes(inp.notes)
+    except AIScoreError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    result["disclosure"] = (
+        "These session notes were sent to Anthropic's Claude API to generate this "
+        "score. This is a proposed starting point, not a finished score -- review "
+        "and adjust each axis before submitting it to /analyze. Axis definitions "
+        "are an unconfirmed interpretation -- see docs/NSDT_REFERENCE.md."
+    )
+    result["system_id"] = inp.system_id
+    return result
 
 
 @app.get("/health")
