@@ -165,6 +165,46 @@
     font-style:italic; color:var(--text);
   }
 
+  .shadow-gift{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+  .sg-col{border-radius:10px; padding:11px 13px; font-size:.85rem; line-height:1.45;}
+  .sg-gift{background:rgba(127,201,160,.09); border:1px solid rgba(127,201,160,.28); color:var(--text);}
+  .sg-shadow{background:rgba(224,138,122,.09); border:1px solid rgba(224,138,122,.28); color:var(--text);}
+  .sg-label{display:block; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; opacity:.75;}
+  .sg-gift .sg-label{color:var(--good);}
+  .sg-shadow .sg-label{color:var(--danger);}
+  @media (max-width:520px){ .shadow-gift{grid-template-columns:1fr;} }
+
+  /* Guided reflection topic explorer */
+  .guided-explore summary{
+    cursor:pointer; font-weight:700; padding:4px 0 12px 0; list-style:none;
+    display:flex; align-items:center; gap:8px; font-size:1rem;
+  }
+  .guided-explore summary::-webkit-details-marker{display:none;}
+  .guided-explore summary::before{content:"▸"; color:var(--accent); transition:transform .2s var(--ease); display:inline-block;}
+  .guided-explore[open] summary::before{transform:rotate(90deg);}
+  .topic-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:4px;}
+  .topic-tile{
+    background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:14px 12px;
+    cursor:pointer; text-align:left; transition:border-color .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+    display:flex; flex-direction:column; gap:6px; color:var(--text);
+  }
+  .topic-tile:hover{border-color:var(--accent-dim); transform:translateY(-2px); box-shadow:var(--shadow-sm);}
+  .topic-tile.active{border-color:var(--accent); background:var(--card-hover);}
+  .topic-tile .t-icon{font-size:1.5rem; line-height:1;}
+  .topic-tile .t-title{font-weight:700; font-size:.88rem;}
+  .topic-tile .t-blurb{font-size:.75rem; color:var(--text-faint); line-height:1.3;}
+  .guided-panel{margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);}
+  .guided-panel .g-back{
+    background:none; border:none; color:var(--text-faint); font-size:.8rem; cursor:pointer;
+    padding:0 0 10px 0; text-decoration:underline;
+  }
+  .guided-panel .g-back:hover{color:var(--accent);}
+  .guided-panel h4{margin:0 0 12px 0; display:flex; align-items:center; gap:8px;}
+  .guided-q label{font-size:.85rem; color:var(--text-dim); font-weight:600; margin-top:10px;}
+  .guided-q label.g-opening{color:var(--text); font-size:.92rem;}
+  .guided-q textarea{min-height:52px;}
+  .guided-q textarea.g-opening-input{min-height:80px;}
+
   .entry{border-top:1px solid var(--border); padding-top:14px; margin-top:14px;}
   .entry:first-child{border-top:none; margin-top:0; padding-top:0;}
   .entry .meta{font-size:.78rem; color:var(--text-faint); margin-bottom:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -427,6 +467,16 @@
     <p class="lead">Paste a passage — sacred text, a journal entry, a resume bullet, a description of a fight you
       had — anything. It gets read through the same ten-stage lens either way.</p>
 
+    <details class="card guided-explore" id="guidedExplore">
+      <summary>Not sure what to write? Explore a life topic</summary>
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="color:var(--text-faint); font-size:.8rem;">Pick a topic, or let it choose for you.</span>
+        <button type="button" class="btn secondary small" style="margin-top:0" onclick="surpriseTopic()">🎲 Surprise me</button>
+      </div>
+      <div class="topic-grid" id="topicGrid"></div>
+      <div id="guidedPanel"></div>
+    </details>
+
     <div class="card">
       <label>Title (optional)</label>
       <input type="text" id="scanTitle" placeholder="e.g. Psalm 23, or 'the talk with my sister'">
@@ -436,6 +486,14 @@
         <option>Sacred / ancient text</option>
         <option>Relationship</option>
         <option>Family</option>
+        <option>Career / Purpose</option>
+        <option>Money / Security</option>
+        <option>Health & Body</option>
+        <option>Self-Worth / Identity</option>
+        <option>Friendship / Belonging</option>
+        <option>Grief / Loss</option>
+        <option>Creativity / Passion Project</option>
+        <option>Life Transition / Big Decision</option>
         <option>Work / resume</option>
         <option>Diet / health</option>
         <option>Emotional trigger</option>
@@ -568,6 +626,8 @@
 const STAGES = [
   { n:0, canonical:"PLENARA", human:"Open Field",
     essence:"A pause. Cleared space before or after a cycle, not a stalled one.",
+    gift:"A genuine reset — clarity about what actually matters once the noise clears.",
+    shadow:"Avoidance dressed up as rest — using stillness to dodge a decision that's actually ready.",
     habits:[
       "Taking a break without immediately feeling guilty about it",
       "Feeling directionless but not distressed by it",
@@ -578,6 +638,8 @@ const STAGES = [
     prompt:"What are you making room for by not rushing back in?" },
   { n:1, canonical:"SPARK OF NAVIGATION", human:"Awakening",
     essence:"A new direction announces itself, fragile and easily talked out of existing.",
+    gift:"The first honest commitment to a direction that's actually yours.",
+    shadow:"Endless idea-collecting that never becomes a single real step.",
     habits:[
       "A new idea keeps coming back uninvited",
       "Feeling excited but unsure how to start",
@@ -588,6 +650,8 @@ const STAGES = [
     prompt:"What's the smallest real step that would make this spark undeniable?" },
   { n:2, canonical:"FORGE OF POLARITY", human:"Forming Identity",
     essence:"Definition by contrast. You find out what you are partly by finding what you're not.",
+    gift:"A boundary that lets you show up more fully, not less.",
+    shadow:"An identity built entirely in opposition to something, with nothing of its own underneath.",
     habits:[
       "Noticing what you're against as clearly as what you're for",
       "Setting a boundary and immediately feeling guilty about it",
@@ -598,6 +662,8 @@ const STAGES = [
     prompt:"What boundary are you drawing right now, and who or what is it separating you from?" },
   { n:3, canonical:"ENGINE OF EXPRESSION", human:"Discipline & Output",
     essence:"Momentum through repetition. Effort becomes visible, sometimes at the cost of reflection.",
+    gift:"Craft — skill built through repetition that starts to feel effortless.",
+    shadow:"Busyness as a hiding place from a feeling you don't want to sit with.",
     habits:[
       "Leaning hard on routine or discipline",
       "Producing more but reflecting less",
@@ -608,6 +674,8 @@ const STAGES = [
     prompt:"What discipline are you leaning on, and what might it be helping you not feel?" },
   { n:4, canonical:"CRUCIBLE OF EQUILIBRIUM", human:"Testing Ground",
     essence:"Things hold steady. The open question is whether that's rest or stalling.",
+    gift:"Real, earned stability you can build the next thing on.",
+    shadow:"A stall mistaken for peace — nothing moving because moving feels risky.",
     habits:[
       "Things feel stable but a little flat",
       "Double-checking whether the foundation is actually solid",
@@ -618,6 +686,8 @@ const STAGES = [
     prompt:"Is this stability restful, or is it stalling?" },
   { n:5, canonical:"DYNAMO OF WILL", human:"The Choice Point",
     essence:"A real decision point. The most consequential of the ten stages — advance, freeze, or retreat.",
+    gift:"A clear decision made from what you actually want, not fear.",
+    shadow:"Paralysis — staying in the weighing forever because no choice feels safe.",
     habits:[
       "Circling the same decision over and over",
       "Feeling torn between two clearly named paths",
@@ -628,6 +698,8 @@ const STAGES = [
     prompt:"If you stopped weighing this and just noticed what you're already leaning toward — what is it?" },
   { n:6, canonical:"NEXUS OF HARMONY", human:"Integration",
     essence:"Separate efforts start reinforcing each other. A peak-function stage.",
+    gift:"Separate efforts reinforcing each other into something bigger than any one part.",
+    shadow:"Overextension — adding more pieces because 'it's working' instead of consolidating.",
     habits:[
       "Things clicking into place across more than one area at once",
       "Wanting to teach or share what you've learned",
@@ -638,6 +710,8 @@ const STAGES = [
     prompt:"What are you ready to pass on to someone else, now that it's working?" },
   { n:7, canonical:"LENS OF DISTILLATION", human:"Insight & Isolation",
     essence:"Clarity that outpaces connection. The risk here is isolation, not confusion.",
+    gift:"Clarity sharp enough to actually change how you act.",
+    shadow:"Isolation mistaken for depth — insight nobody else ever hears.",
     habits:[
       "Seeing the pattern clearly but feeling alone in seeing it",
       "Withdrawing to think rather than talking it through",
@@ -649,6 +723,8 @@ const STAGES = [
   { n:8, canonical:"VESSEL OF GROUNDING", human:"The Permanence Trap",
     essence:"Two chambers: the Illusion of Arrival (this good thing is permanent) and the Illusion of Permanence " +
       "(this bad thing is permanent). Both are the same trap — mistaking a state for a fact.",
+    gift:"Groundedness — a settled understanding that's actually still open to revision.",
+    shadow:"Rigid certainty defended past the point the evidence supports it.",
     habits:[
       "Insisting 'this is just how it is now,' good or bad",
       "Defending a conclusion more than the evidence for it",
@@ -659,6 +735,8 @@ const STAGES = [
     prompt:"What would you have to admit if this turned out to be temporary?" },
   { n:9, canonical:"TRANSPARENCY OF THE GUIDE", human:"Dissolution & Handoff",
     essence:"Grip loosening, for better or worse. A closing stage, not a final one — it feeds back into stage 0.",
+    gift:"A clean ending that leaves you free for what's next.",
+    shadow:"Grip — refusing to let something end long after it's actually over.",
     habits:[
       "Things loosening their grip, for better or worse",
       "Wanting to document, teach, or pass on what happened",
@@ -669,6 +747,174 @@ const STAGES = [
     prompt:"What are you ready to let end, even without knowing what starts next?" },
 ];
 const stageByN = n => STAGES[n];
+
+/* ============================================================
+   GUIDED REFLECTION — 10 common life-topic intake flows.
+   Purely a text-composition aid: answers get stitched into one
+   passage and run through the exact same word/letter digit-root
+   engine as anything else typed into Pattern Scan. No separate
+   scoring path, no hidden logic.
+   ============================================================ */
+const GUIDED_TOPICS = [
+  { key:"love", icon:"💞", title:"Relationships & Love", domain:"Relationship",
+    blurb:"Current, past, or the absence of one",
+    opening:"What's actually going on in your romantic life right now — whether that's a relationship, a situationship, or the absence of one?",
+    followups:[
+      "What's the specific moment or interaction that's been sitting with you lately?",
+      "What do you find yourself wanting from this person, or from love in general, that you're not saying out loud?",
+      "What pattern from a past relationship do you notice repeating here?",
+      "If this person could hear one honest sentence from you right now, what would it be?"
+    ]},
+  { key:"career", icon:"🧭", title:"Career & Purpose", domain:"Career / Purpose",
+    blurb:"Work, calling, ambition",
+    opening:"What's the real state of things with your work right now — not the resume version, the honest one?",
+    followups:[
+      "What part of your work lights you up, even a little, these days?",
+      "What are you doing out of obligation rather than choice?",
+      "What would you attempt if you weren't worried about how it looked to others?",
+      "What's the quiet fear underneath your current career decision?"
+    ]},
+  { key:"family", icon:"🏠", title:"Family", domain:"Family",
+    blurb:"Parents, siblings, the family you're building",
+    opening:"What's alive right now in your relationship with your family — parents, siblings, or the family you're building?",
+    followups:[
+      "What role do you find yourself playing in this family, even when you don't want to?",
+      "What's something you've never said to them that keeps coming up?",
+      "Where are you repeating a pattern you swore you wouldn't?",
+      "What would it look like to show up differently the next time you see them?"
+    ]},
+  { key:"money", icon:"💰", title:"Money & Security", domain:"Money / Security",
+    blurb:"Finances, stability, scarcity",
+    opening:"What's your actual relationship with money and stability right now, beyond the numbers?",
+    followups:[
+      "What decision about money have you been putting off?",
+      "What did you learn about money growing up that you're still operating from?",
+      "Where does scarcity or fear show up in how you spend, save, or avoid looking?",
+      "What would 'enough' actually feel like for you?"
+    ]},
+  { key:"health", icon:"🌿", title:"Health & Body", domain:"Health & Body",
+    blurb:"Energy, sleep, how you feel in your skin",
+    opening:"What's the honest state of your body and health right now — energy, sleep, how you feel in your skin?",
+    followups:[
+      "What is your body trying to tell you that you've been talking over?",
+      "What habit are you keeping even though it's not serving you anymore?",
+      "Where do you notice tension or exhaustion showing up physically?",
+      "What would taking your body seriously actually require of you this week?"
+    ]},
+  { key:"identity", icon:"🪞", title:"Self-Worth & Identity", domain:"Self-Worth / Identity",
+    blurb:"Confidence, who you're becoming",
+    opening:"Who do you feel like you are right now, versus who you're trying to become?",
+    followups:[
+      "What do you do to earn approval that you wish you didn't have to do?",
+      "What's a compliment you have a hard time believing?",
+      "Where do you shrink yourself to keep the peace?",
+      "What would you do differently if you fully believed you were enough already?"
+    ]},
+  { key:"friendship", icon:"🤝", title:"Friendship & Belonging", domain:"Friendship / Belonging",
+    blurb:"Social connection, loneliness",
+    opening:"What's the state of your friendships and sense of belonging right now?",
+    followups:[
+      "Who have you been meaning to reach out to?",
+      "Where do you feel like you're performing rather than being known?",
+      "What kind of friend have you not been able to be lately, and why?",
+      "What would real belonging actually look like for you right now?"
+    ]},
+  { key:"grief", icon:"🕯️", title:"Grief & Loss", domain:"Grief / Loss",
+    blurb:"A person, a relationship, a version of your life",
+    opening:"What loss — a person, a relationship, a version of your life — is still present for you?",
+    followups:[
+      "What do you miss most, specifically?",
+      "What haven't you let yourself feel yet about this?",
+      "What would you say if you had one more conversation with what you lost?",
+      "What are you afraid moving on would mean about how much it mattered?"
+    ]},
+  { key:"creativity", icon:"✨", title:"Creativity & Passion Projects", domain:"Creativity / Passion Project",
+    blurb:"The thing you keep putting off",
+    opening:"What's the thing you want to make or build that you keep putting off?",
+    followups:[
+      "What's stopping you — time, fear, permission, something else?",
+      "Who are you afraid will judge this, and does that person's opinion actually matter here?",
+      "What's the smallest version of this you could start this week?",
+      "What would it mean about you if you actually finished it?"
+    ]},
+  { key:"transition", icon:"🚪", title:"Life Transitions & Big Decisions", domain:"Life Transition / Big Decision",
+    blurb:"The fork in the road you're standing at",
+    opening:"What's the big decision or transition you're standing in front of right now?",
+    followups:[
+      "What does each option actually cost you, honestly?",
+      "What are you most afraid of getting wrong here?",
+      "What does your gut say when you stop listing pros and cons?",
+      "What would you regret more: trying and failing, or not trying at all?"
+    ]},
+];
+
+function renderTopicGrid(){
+  const wrap = document.getElementById("topicGrid");
+  if(!wrap) return;
+  wrap.innerHTML = GUIDED_TOPICS.map(t => `
+    <button type="button" class="topic-tile" id="tile-${t.key}" onclick="openGuidedTopic('${t.key}')">
+      <span class="t-icon">${t.icon}</span>
+      <span class="t-title">${t.title}</span>
+      <span class="t-blurb">${t.blurb}</span>
+    </button>`).join("");
+}
+
+function surpriseTopic(){
+  const t = GUIDED_TOPICS[Math.floor(Math.random()*GUIDED_TOPICS.length)];
+  openGuidedTopic(t.key);
+  document.getElementById("guidedPanel").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function openGuidedTopic(key){
+  const t = GUIDED_TOPICS.find(x => x.key === key);
+  if(!t) return;
+  document.querySelectorAll(".topic-tile").forEach(el => el.classList.toggle("active", el.id === "tile-"+key));
+  const panel = document.getElementById("guidedPanel");
+  panel.innerHTML = `
+    <div class="guided-panel">
+      <button type="button" class="g-back" onclick="closeGuidedTopic()">‹ back to topics</button>
+      <h4>${t.icon} ${t.title}</h4>
+      <div class="guided-q">
+        <label class="g-opening">${t.opening}</label>
+        <textarea class="g-opening-input" id="gOpening" placeholder="Write as much or as little as you want..."></textarea>
+        ${t.followups.map((q,i)=>`
+        <label>${q}</label>
+        <textarea id="gFollow${i}" placeholder="Optional"></textarea>`).join("")}
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="composeGuidedReflection('${key}')">Build my reflection →</button>
+    </div>`;
+}
+
+function closeGuidedTopic(){
+  document.querySelectorAll(".topic-tile").forEach(el => el.classList.remove("active"));
+  document.getElementById("guidedPanel").innerHTML = "";
+}
+
+function composeGuidedReflection(key){
+  const t = GUIDED_TOPICS.find(x => x.key === key);
+  if(!t) return;
+  const opening = (document.getElementById("gOpening").value || "").trim();
+  if(!opening){ showToast("Answer at least the first question to build a reflection"); return; }
+  const parts = [opening];
+  t.followups.forEach((q,i)=>{
+    const val = (document.getElementById("gFollow"+i).value || "").trim();
+    if(val) parts.push(val);
+  });
+  const composed = parts.join("\n\n");
+  document.getElementById("scanText").value = composed;
+  if(!document.getElementById("scanTitle").value.trim()){
+    document.getElementById("scanTitle").value = t.title;
+  }
+  const domainSel = document.getElementById("scanDomain");
+  if([...domainSel.options].some(o=>o.value===t.domain)) domainSel.value = t.domain;
+  const details = document.getElementById("guidedExplore");
+  if(details) details.open = false;
+  closeGuidedTopic();
+  document.getElementById("scanText").scrollIntoView({behavior:"smooth", block:"center"});
+  document.getElementById("scanText").focus();
+  showToast("Reflection built — review it below, then hit Scan");
+}
+
 
 /* ============================================================
    GEOMETRIC FORM -- ported 1:1 from the Tumbling Inversion engine's
@@ -1229,6 +1475,10 @@ function readingHTML(reading, forEntryId){
       </div>
       <div style="color:var(--text-faint); font-size:.78rem; letter-spacing:.03em; text-transform:uppercase; margin:2px 0 6px 0;">Geometric form: ${geoFormLabel(reading.stage)}</div>
       <div class="human">${s.essence}</div>
+      <div class="shadow-gift">
+        <div class="sg-col sg-gift"><span class="sg-label">Gift, if you work with it</span>${s.gift}</div>
+        <div class="sg-col sg-shadow"><span class="sg-label">Shadow, if you stay stuck</span>${s.shadow}</div>
+      </div>
       ${inversionHTML(reading.stage)}
       <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
         <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
@@ -1940,6 +2190,7 @@ function renderGuide(){
    INIT
    ============================================================ */
 renderHomeStats();
+renderTopicGrid();
 if(localStorage.getItem("kairos_banner_dismissed")){
   document.getElementById("disclaimerBanner").style.display="none";
 }
