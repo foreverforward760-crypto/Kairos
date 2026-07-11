@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairos — find the pattern in anything</title>
+<style>
+  :root{
+    --bg:#121018; --bg2:#1a1725; --bg3:#221e30;
+    --card:#1e1a2a; --card2:#272233; --card-hover:#2c2638;
+    --border:#38324a; --border-soft:#2a2538;
+    --text:#f0ecf7; --text-dim:#ada3c7; --text-faint:#7a7196;
+    --accent:#e5bc72; --accent-soft:#f0d19a; --accent-dim:#8a744a;
+    --accent2:#b083a8; --accent2-dim:#6b4d68;
+    --danger:#e08a7a; --good:#7fc9a0;
+    --glow:0 0 0 1px rgba(229,188,114,.12), 0 0 24px -6px rgba(229,188,114,.35);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.25);
+    --shadow-md:0 4px 16px -4px rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.3);
+    --shadow-lg:0 12px 32px -8px rgba(0,0,0,.55);
+    --radius:14px; --radius-sm:9px; --radius-lg:20px;
+    --maxw:860px;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"liga" 1,"kern" 1;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:
+      radial-gradient(1100px 560px at 12% -8%, rgba(229,188,114,.07), transparent 60%),
+      radial-gradient(900px 520px at 100% 0%, rgba(176,131,168,.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    line-height:1.6; padding-bottom:80px;
+    min-height:100vh;
+  }
+  a{color:var(--accent); text-decoration-color:rgba(229,188,114,.4);}
+  a:hover{text-decoration-color:var(--accent);}
+  ::selection{background:rgba(229,188,114,.28); color:var(--text);}
+  *:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:999px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--accent-dim);}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px;}
+  header.top{
+    position:sticky; top:0; z-index:40;
+    background:linear-gradient(180deg,rgba(26,23,37,.92),rgba(18,16,24,.92));
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-soft); padding:20px 0 0 0;
+  }
+  header.top h1{
+    font-size:1.4rem; margin:0 0 5px 0; letter-spacing:.005em; font-weight:700;
+    display:flex; align-items:center; gap:11px; color:var(--text);
+  }
+  .wordmark-glyph{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, var(--accent-soft), var(--accent-dim) 75%);
+    box-shadow:var(--glow);
+    font-size:1.05rem; color:#1b1607;
+  }
+  header.top .tagline{color:var(--text-dim); font-size:.9rem; margin-bottom:18px; max-width:52ch;}
+  nav.tabs{display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; position:relative;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    background:none; border:none; color:var(--text-dim); padding:12px 15px;
+    font-size:.88rem; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent;
+    font-weight:600; letter-spacing:.005em; border-radius:8px 8px 0 0;
+    transition:color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
+  }
+  nav.tabs button.active{color:var(--accent); border-bottom:2px solid var(--accent);}
+  nav.tabs button:hover{color:var(--text); background:rgba(255,255,255,.03);}
+
+  main{padding-top:26px;}
+  section.tab{display:none;}
+  section.tab.active{display:block; animation:fadein .35s var(--ease-out);}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+
+  h2{font-size:1.22rem; margin:0 0 8px 0; font-weight:700; letter-spacing:.002em;}
+  h3{font-size:1.02rem; margin:24px 0 10px 0; color:var(--text); font-weight:700;}
+  p.lead{color:var(--text-dim); margin-top:0; line-height:1.6;}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:16px; box-shadow:var(--shadow-sm);
+    transition:border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
+  }
+  .card.tight{padding:15px 17px;}
+  .card[onclick]{cursor:pointer;}
+  .card[onclick]:hover{border-color:var(--accent-dim); transform:translateY(-2px); box-shadow:var(--shadow-md);}
+
+  .banner{
+    background:linear-gradient(180deg,#2a2338,#251f32); border:1px solid var(--accent-dim); border-radius:var(--radius);
+    padding:16px 20px; margin-bottom:20px; font-size:.88rem; color:var(--text-dim); line-height:1.6;
+    box-shadow:var(--shadow-sm);
+  }
+  .banner b{color:var(--accent);}
+  .banner .dismiss{
+    float:right; background:none; border:none; color:var(--text-faint); cursor:pointer;
+    font-size:.85rem; text-decoration:underline;
+  }
+
+  label{display:block; font-size:.78rem; color:var(--text-dim); margin:16px 0 6px 0; font-weight:600; letter-spacing:.01em; text-transform:uppercase; opacity:.85;}
+  label:first-child{margin-top:0;}
+  input[type=text], textarea, select{
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); padding:11px 13px; font-size:.92rem; font-family:inherit; resize:vertical;
+    transition:border-color .18s var(--ease), box-shadow .18s var(--ease);
+  }
+  textarea{min-height:120px;}
+  input[type=text]:focus, textarea:focus, select:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(229,188,114,.15);
+  }
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .row > *{flex:1; min-width:160px;}
+
+  button.btn{
+    background:linear-gradient(180deg,var(--accent-soft),var(--accent)); color:#241d10; border:none; border-radius:var(--radius-sm);
+    padding:11px 20px; font-size:.9rem; font-weight:700; cursor:pointer; margin-top:16px;
+    box-shadow:0 2px 8px -2px rgba(229,188,114,.35);
+    transition:filter .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+  }
+  button.btn:hover{filter:brightness(1.05); box-shadow:0 4px 14px -3px rgba(229,188,114,.45);}
+  button.btn:active{transform:translateY(1px) scale(.99);}
+  button.btn.secondary{
+    background:transparent; color:var(--text-dim); border:1px solid var(--border); font-weight:600;
+    box-shadow:none;
+  }
+  button.btn.secondary:hover{color:var(--text); border-color:var(--text-dim); filter:none;}
+  button.btn.danger{background:transparent; color:var(--danger); border:1px solid var(--danger); box-shadow:none;}
+  button.btn.small{padding:7px 13px; font-size:.8rem; margin-top:0;}
+
+  .stage-badge{
+    display:inline-flex; align-items:center; gap:7px; padding:5px 12px 5px 7px;
+    border-radius:999px; font-size:.82rem; font-weight:700; color:#100e17;
+    box-shadow:0 1px 4px rgba(0,0,0,.25);
+  }
+  .stage-dot{width:9px; height:9px; border-radius:50%; background:currentColor;}
+  .geo-glyph{display:inline-flex; flex-shrink:0;}
+  .geo-glyph svg{display:block;}
+
+  .reading{
+    border-left:3px solid var(--accent); padding:18px 20px; margin-top:16px;
+    background:linear-gradient(135deg, rgba(229,188,114,.05), transparent 55%);
+    border-radius:0 var(--radius) var(--radius) 0; position:relative; overflow:hidden;
+  }
+  .reading-hero{display:flex; align-items:center; gap:16px; margin-bottom:2px;}
+  .reading-hero .geo-glyph-lg{flex-shrink:0; opacity:.95; filter:drop-shadow(0 2px 10px rgba(0,0,0,.35));}
+  .reading .stagename{font-size:1.22rem; font-weight:700; margin:10px 0 2px 0; letter-spacing:.002em;}
+  .reading .human{color:var(--text-dim); font-style:italic; margin-bottom:10px;}
+  details.math{margin-top:14px; font-size:.85rem; color:var(--text-dim);}
+  details.math summary{cursor:pointer; color:var(--accent); font-weight:600;}
+  details.math table{width:100%; border-collapse:collapse; margin-top:10px;}
+  details.math td{padding:4px 6px; border-bottom:1px solid var(--border);}
+  details.math td:first-child{color:var(--text-faint);}
+
+  ul.habits{margin:8px 0 0 0; padding-left:20px; color:var(--text-dim); font-size:.9rem;}
+  ul.habits li{margin-bottom:4px;}
+  .prompt-box{
+    background:var(--card2); border-radius:10px; padding:12px 14px; margin-top:12px;
+    font-style:italic; color:var(--text);
+  }
+
+  .shadow-gift{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+  .sg-col{border-radius:10px; padding:11px 13px; font-size:.85rem; line-height:1.45;}
+  .sg-gift{background:rgba(127,201,160,.09); border:1px solid rgba(127,201,160,.28); color:var(--text);}
+  .sg-shadow{background:rgba(224,138,122,.09); border:1px solid rgba(224,138,122,.28); color:var(--text);}
+  .sg-label{display:block; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; opacity:.75;}
+  .sg-gift .sg-label{color:var(--good);}
+  .sg-shadow .sg-label{color:var(--danger);}
+  @media (max-width:520px){ .shadow-gift{grid-template-columns:1fr;} }
+
+  /* NSDT axis sliders -- the real input to the classifier */
+  .axis-panel{margin:6px 0 14px 0; display:flex; flex-direction:column; gap:14px;}
+  .axis-row{background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:10px 14px;}
+  .axis-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .axis-label{font-weight:700; font-size:.88rem; color:var(--text);}
+  .axis-value{font-size:.82rem; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .axis-slider{width:100%; accent-color:var(--accent); cursor:pointer;}
+  .axis-ends{display:flex; justify-content:space-between; margin-top:4px; font-size:.72rem; color:var(--text-faint);}
+
+  /* Stage 6/7/8 paradox blocks */
+  .paradox-box{
+    border-radius:10px; padding:12px 14px; margin-top:14px; font-size:.88rem; line-height:1.5;
+    border:1px solid var(--border);
+  }
+  .paradox-box p{margin:6px 0 0 0; color:var(--text-dim);}
+  .paradox-sustainable, .paradox-distillation, .paradox-dissolution{
+    background:rgba(127,201,160,.09); border-color:rgba(127,201,160,.28);
+  }
+  .paradox-brittle, .paradox-collapse, .paradox-shattering{
+    background:rgba(224,138,122,.09); border-color:rgba(224,138,122,.28);
+  }
+
+  .somatic-box{
+    background:var(--card2); border-radius:10px; padding:11px 14px; margin-top:12px;
+    font-size:.85rem; color:var(--text-dim); line-height:1.5;
+  }
+  .trickster-box{
+    font-size:.85rem; font-style:italic; color:var(--text-faint); margin-top:10px; padding:0 2px;
+  }
+  .note-box{
+    border-left:3px solid var(--accent); background:var(--card2); border-radius:0 10px 10px 0;
+    padding:9px 14px; margin-top:12px; font-size:.85rem; color:var(--text);
+  }
+
+  /* Guided reflection topic explorer */
+  .guided-explore summary{
+    cursor:pointer; font-weight:700; padding:4px 0 12px 0; list-style:none;
+    display:flex; align-items:center; gap:8px; font-size:1rem;
+  }
+  .guided-explore summary::-webkit-details-marker{display:none;}
+  .guided-explore summary::before{content:"▸"; color:var(--accent); transition:transform .2s var(--ease); display:inline-block;}
+  .guided-explore[open] summary::before{transform:rotate(90deg);}
+  .topic-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:4px;}
+  .topic-tile{
+    background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:14px 12px;
+    cursor:pointer; text-align:left; transition:border-color .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+    display:flex; flex-direction:column; gap:6px; color:var(--text);
+  }
+  .topic-tile:hover{border-color:var(--accent-dim); transform:translateY(-2px); box-shadow:var(--shadow-sm);}
+  .topic-tile.active{border-color:var(--accent); background:var(--card-hover);}
+  .topic-tile .t-icon{font-size:1.5rem; line-height:1;}
+  .topic-tile .t-title{font-weight:700; font-size:.88rem;}
+  .topic-tile .t-blurb{font-size:.75rem; color:var(--text-faint); line-height:1.3;}
+  .guided-panel{margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);}
+  .guided-panel .g-back{
+    background:none; border:none; color:var(--text-faint); font-size:.8rem; cursor:pointer;
+    padding:0 0 10px 0; text-decoration:underline;
+  }
+  .guided-panel .g-back:hover{color:var(--accent);}
+  .guided-panel h4{margin:0 0 12px 0; display:flex; align-items:center; gap:8px;}
+  .guided-q label{font-size:.85rem; color:var(--text-dim); font-weight:600; margin-top:10px;}
+  .guided-q label.g-opening{color:var(--text); font-size:.92rem;}
+  .guided-q textarea{min-height:52px;}
+  .guided-q textarea.g-opening-input{min-height:80px;}
+
+  .entry{border-top:1px solid var(--border); padding-top:14px; margin-top:14px;}
+  .entry:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .entry .meta{font-size:.78rem; color:var(--text-faint); margin-bottom:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .entry .body{font-size:.9rem; color:var(--text-dim); white-space:pre-wrap;}
+  .entry .note{margin-top:6px; font-size:.85rem; color:var(--text); background:var(--card2); padding:8px 10px; border-radius:8px;}
+  .entry-actions{margin-top:6px;}
+  .entry-actions button{margin-right:8px;}
+
+  .empty{color:var(--text-faint); font-size:.88rem; padding:10px 0;}
+
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:6px; font-size:.8rem;}
+  .bar-row .label{width:150px; color:var(--text-dim); flex-shrink:0;}
+  .bar-track{flex:1; background:var(--bg2); border-radius:6px; height:14px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px;}
+  .bar-row .count{width:24px; text-align:right; color:var(--text-faint);}
+
+  .area-chip{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2);
+    border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:.85rem;
+    cursor:pointer; margin:0 8px 8px 0;
+  }
+  .area-chip.selected{border-color:var(--accent); color:var(--accent);}
+
+  .guide-stage{border-bottom:1px solid var(--border-soft); padding:20px 0; transition:background .2s var(--ease);}
+  .guide-stage:last-child{border-bottom:none;}
+  .guide-stage:hover{background:rgba(255,255,255,.012);}
+  .guide-stage h3{margin:0 0 4px 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .guide-form-label{
+    font-size:.72rem; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;
+    margin-left:auto; padding:3px 9px; border:1px solid var(--border); border-radius:999px;
+  }
+
+  .habit-group summary{cursor:pointer; font-weight:700; padding:8px 0; display:flex; align-items:center; gap:8px;}
+  .habit-group{border-bottom:1px solid var(--border); padding:4px 0;}
+  .habit-group:last-child{border-bottom:none;}
+  .habit-check{display:flex; align-items:flex-start; gap:8px; padding:5px 0 5px 20px; font-size:.88rem; color:var(--text-dim);}
+  .habit-check input{margin-top:3px;}
+
+  footer{margin-top:40px; text-align:center; color:var(--text-faint); font-size:.78rem; padding:20px;}
+  footer a{color:var(--text-faint);}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--good); color:#0f1a14; padding:10px 20px; border-radius:999px;
+    font-size:.85rem; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+
+  @media (max-width:520px){
+    .row > *{min-width:100%;}
+    .bar-row .label{width:100px;}
+  }
+
+  .quote-box{
+    border-left:3px solid var(--text-faint); padding:10px 14px; margin-top:12px;
+    font-size:.88rem; color:var(--text-dim); font-style:italic;
+  }
+  .quote-box cite{display:block; margin-top:4px; font-style:normal; font-size:.78rem; color:var(--text-faint);}
+  .breathe-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); border-radius:999px; padding:6px 14px; font-size:.82rem; cursor:pointer; margin-top:12px;
+  }
+  .breathe-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(10,9,15,.82);
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-box{
+    background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:28px 24px; max-width:380px; width:100%; text-align:center;
+  }
+  .modal-box h3{margin:0 0 4px 0;}
+  .modal-box .breath-note{color:var(--text-dim); font-size:.85rem; margin-bottom:22px;}
+  .breath-stage{
+    width:150px; height:150px; margin:0 auto 20px auto; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .breath-circle{
+    width:90px; height:90px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--accent), var(--accent-dim));
+    transform:scale(1); transition:transform 4s linear;
+  }
+  #breathPhase{font-size:1.05rem; font-weight:700; margin-bottom:4px;}
+  #breathCount{color:var(--text-dim); font-size:.85rem; margin-bottom:20px;}
+  .modal-actions{display:flex; gap:10px; justify-content:center;}
+
+  .trickster-box{
+    border-left:3px solid var(--accent); background:rgba(224,181,104,.08);
+    padding:12px 14px; margin-top:14px; border-radius:0 8px 8px 0;
+  }
+  .trickster-box .label{
+    display:block; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:4px; font-weight:700;
+  }
+  .trickster-box .line{font-size:.92rem; color:var(--text);}
+  .ai-block{
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--border);
+  }
+  .ai-narrative{font-size:.92rem; color:var(--text); margin-bottom:4px;}
+  .ai-parallel{
+    border-left:3px solid var(--text-faint); padding:10px 14px; margin-top:10px;
+    font-size:.86rem; color:var(--text-dim); font-style:italic;
+  }
+  .ai-parallel cite{display:block; margin-top:4px; font-style:normal; font-size:.78rem; color:var(--text-faint);}
+  .ai-questions{margin-top:12px;}
+  .ai-q-btn{
+    display:block; width:100%; text-align:left; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); border-radius:10px; padding:9px 12px; font-size:.85rem; cursor:pointer; margin-top:6px;
+  }
+  .ai-q-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .ai-thread{margin-top:10px;}
+  .ai-thread .turn{margin-top:10px;}
+  .ai-thread .q{font-size:.82rem; color:var(--text-dim); font-weight:600;}
+  .ai-thread .a{font-size:.85rem; color:var(--text); margin:4px 0;}
+  .ai-thread .reply{font-size:.85rem; color:var(--text-dim); font-style:italic;}
+  .ai-answer-box{display:flex; gap:8px; margin-top:8px;}
+  .ai-answer-box textarea{flex:1; min-height:44px;}
+  .ai-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--accent); border:1px solid var(--accent);
+    color:#1b1607; border-radius:999px; padding:8px 16px; font-size:.85rem; cursor:pointer; margin-top:14px;
+    font-weight:700;
+  }
+  .ai-btn:hover{opacity:.9;}
+  .ai-btn:disabled{opacity:.5; cursor:default;}
+  .ai-btn.secondary{
+    background:transparent; color:var(--accent); font-weight:600;
+  }
+  .ai-status{font-size:.82rem; color:var(--text-faint); margin-top:8px;}
+  .ai-settings{margin-top:14px;}
+  .ai-settings input{font-size:.85rem;}
+  .streak-pill{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border);
+    border-radius:999px; padding:6px 14px; font-size:.85rem; margin-bottom:14px;
+  }
+  #shareCardWrap{margin-top:14px; display:none;}
+  #shareCardCanvas{max-width:100%; border-radius:10px; border:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1><span class="wordmark-glyph">🜛</span> Kairos Reflection Journal</h1>
+    <div class="tagline">A pattern-reflection tool for whatever you bring it — texts, relationships, work, habits, cycles.</div>
+    <nav class="tabs">
+      <button data-tab="home" class="active">Home</button>
+      <button data-tab="scan">Pattern Scan</button>
+      <button data-tab="cycle">Cycle Journal</button>
+      <button data-tab="habits">Habit Log</button>
+      <button data-tab="guide">Stage Guide</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HOME -->
+  <section class="tab active" id="tab-home">
+    <div class="banner" id="disclaimerBanner">
+      <button class="dismiss" onclick="dismissBanner()">hide</button>
+      <b>What this is:</b> an interpretive self-reflection tool — the same category as tarot, the I Ching, or a
+      structured journaling prompt deck.
+      <br><br>
+      <b>How the reading works:</b> the ten stages form a wheel, not a ladder — 0 through 9 and back to 0. The
+      cycle moves forward by <b>tumbling</b>: at the even stages (2, 4, 6, 8) the outer situation looks solid while
+      the inner state is quietly unsettled underneath it; at the odd stages (1, 3, 5, 7, 9) the outer situation
+      looks unsettled while the inner state is actually gaining clarity. Neither side can hold forever, so the
+      system keeps tumbling forward — that trade-off is the engine, not a flaw in it. Every reading locates where
+      your words currently sit on that wheel, using the shape of the text itself (word count and letter count,
+      reduced the same way throughout this project) — point it at anything: a passage, a conversation, a decision,
+      a single sentence.
+      <br><br>
+      <b>Your data:</b> the base reading (the stage, the habits, the quote) runs entirely on your device using
+      simple word/letter arithmetic — nothing is sent anywhere for that part, and "Export data" on any journal tab
+      backs it up or moves it to another device. If you tap <b>"Ask Kairos to go deeper"</b> on a reading, the text
+      you're reading gets sent to Claude (Anthropic's AI) to generate a personalized narrative, a story parallel,
+      and follow-up questions — that's the one part of this app that isn't fully local. As with anything you type
+      into any online tool: don't paste something you wouldn't want to leave your device, and use the same
+      judgment here you'd use anywhere else online.
+      <br><br>
+      Not intended for medical, legal, financial, or diagnostic decisions.
+    </div>
+
+    <div class="card" id="aiSettingsCard">
+      <h2>✨ Kairos AI <span style="color:var(--text-dim); font-weight:400; font-size:.85rem;">(optional)</span></h2>
+      <p class="lead" style="margin-bottom:10px;">Every reading works fully offline with no setup. If you want
+        each reading deepened — a personalized narrative, a real story or quote parallel, a Trickster Take, and
+        follow-up questions — point this at a running Kairos backend (see the project README for how to host one)
+        and paste its address below. Leave it blank to skip this entirely.</p>
+      <div class="row ai-settings">
+        <input type="text" id="aiBackendUrl" placeholder="e.g. https://your-kairos-backend.example.com">
+        <button class="btn small" style="margin-top:0" onclick="saveBackendURL()">Save</button>
+      </div>
+      <div id="aiSettingsStatus" class="ai-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>What you can do here</h2>
+      <p class="lead">Bring anything — a Bible or Quran passage, a paragraph about a relationship, a section of your
+        resume, a note about what you ate today, a description of a recurring argument. The engine doesn't need to
+        know what kind of thing it is; it just reflects the same ten-stage lens back at it, and gives you a prompt
+        to think with.</p>
+      <div class="row">
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('scan')">
+          <b>1. Pattern Scan</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Paste any text or write about any
+            topic. Get a stage reading, the habits typically associated with it, and a reflective prompt. Save it
+            to build a running journal.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('cycle')">
+          <b>2. Cycle Journal</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">Track named life areas — a
+            relationship, a job search, a health habit — over time, and see where you keep landing.</p>
+        </div>
+        <div class="card tight" style="cursor:pointer" onclick="switchTab('habits')">
+          <b>3. Habit Log</b>
+          <p style="margin:6px 0 0 0; color:var(--text-dim); font-size:.86rem;">A checklist of plain-language habits
+            per stage. Check off what you notice in yourself, and watch which stages recur most.</p>
+        </div>
+      </div>
+      <p style="margin-top:16px;"><a href="#" onclick="switchTab('guide'); return false;">→ Read the Stage Guide</a>
+        first if you want to know what the ten stages mean before you start.</p>
+    </div>
+
+    <div class="card">
+      <h2>What's new</h2>
+      <p class="lead" style="margin-bottom:10px;">A few pieces of this project's own framework beyond raw digit-root
+        math, added honestly:</p>
+      <ul class="habits" style="margin-bottom:14px;">
+        <li><b>Inversion</b> — every reading now shows whether the stage reads as physically stable/unstable
+          vs. consciously stable/unstable, ported from the Container Rule engine's own labeling.</li>
+        <li><b>Stage 5 fork</b> — Stage 5 readings now name the three real directions (Advance / Freeze / Crisis)
+          instead of just a habit list.</li>
+        <li><b>Trap accumulation</b> — the Cycle Journal now flags when an area's check-ins repeat Stage 8,
+          using the same consecutive-count logic as the engine's trap detector.</li>
+        <li><b>Deeper zoom</b> — readings can now drill a third level down (nano-position), same transparent
+          math, smaller slice, opt-in.</li>
+        <li><b>Consistency signal</b> — the Cycle Journal now computes real entropy over your own check-in
+          history per area, showing whether it clusters on one stage or scatters.</li>
+      </ul>
+      <p class="lead" style="margin-bottom:0; font-size:.85rem;">Left out on purpose: a formula that scores your
+        odds of success at a decision (its weights were never fit to real outcomes — a percentage would be
+        invented, not computed), and any claim that this can tell real signal from meaningless text. The
+        consistency signal above measures how consistent <i>you've been</i>, not whether your words mean
+        anything.</p>
+    </div>
+
+    <div class="card">
+      <h2>Quick stats</h2>
+      <div id="homeStats"></div>
+      <button class="btn secondary small" onclick="exportAll()">Export all data (.json)</button>
+      <button class="btn danger small" onclick="clearAllData()">Clear all data</button>
+    </div>
+  </section>
+
+  <!-- PATTERN SCAN -->
+  <section class="tab" id="tab-scan">
+    <h2>Pattern Scan</h2>
+    <p class="lead">Paste a passage — sacred text, a journal entry, a resume bullet, a description of a fight you
+      had — anything. It gets read through the same ten-stage lens either way.</p>
+
+    <details class="card guided-explore" id="guidedExplore">
+      <summary>Not sure what to write? Explore a life topic</summary>
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="color:var(--text-faint); font-size:.8rem;">Pick a topic, or let it choose for you.</span>
+        <button type="button" class="btn secondary small" style="margin-top:0" onclick="surpriseTopic()">🎲 Surprise me</button>
+      </div>
+      <div class="topic-grid" id="topicGrid"></div>
+      <div id="guidedPanel"></div>
+    </details>
+
+    <div class="card">
+      <label>Title (optional)</label>
+      <input type="text" id="scanTitle" placeholder="e.g. Psalm 23, or 'the talk with my sister'">
+      <label>Life domain (optional, for your own filing)</label>
+      <select id="scanDomain">
+        <option value="">— unspecified —</option>
+        <option>Sacred / ancient text</option>
+        <option>Relationship</option>
+        <option>Family</option>
+        <option>Career / Purpose</option>
+        <option>Money / Security</option>
+        <option>Health & Body</option>
+        <option>Self-Worth / Identity</option>
+        <option>Friendship / Belonging</option>
+        <option>Grief / Loss</option>
+        <option>Creativity / Passion Project</option>
+        <option>Life Transition / Big Decision</option>
+        <option>Work / resume</option>
+        <option>Diet / health</option>
+        <option>Emotional trigger</option>
+        <option>Other</option>
+      </select>
+      <label style="margin-top:14px;">Rate what's actually going on, right now, on each axis</label>
+      <p style="color:var(--text-faint); font-size:.78rem; margin:-6px 0 8px 0;">This is the real input — the reading below is computed from these five numbers, not from anything you write.</p>
+      <div class="axis-panel" id="axisPanel"></div>
+      <label>Context notes (optional)</label>
+      <textarea id="scanText" placeholder="What's actually going on? Doesn't drive the reading — the sliders above do — but useful for your own record, and for the guided reflection prompts below."></textarea>
+      <button class="btn" onclick="runScan()">Scan</button>
+      <div id="scanResult"></div>
+    </div>
+
+    <h3>Saved entries</h3>
+    <div class="card" id="scanHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('pattern')">Export Pattern Scan entries</button>
+  </section>
+
+  <!-- CYCLE JOURNAL -->
+  <section class="tab" id="tab-cycle">
+    <h2>Cycle Journal</h2>
+    <p class="lead">Name the parts of your life you want to watch over time, then check in on them periodically.
+      This journal counts your own repeated entries plainly — no mysticism, just "you logged Stage 8 four of your
+      last six check-ins here."</p>
+
+    <div class="card">
+      <label>Add a life area</label>
+      <div class="row">
+        <input type="text" id="newAreaName" placeholder="e.g. My marriage, Job search, Eating habits">
+        <button class="btn small" style="margin-top:0" onclick="addArea()">Add area</button>
+      </div>
+      <div id="areaChips" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card" id="checkinCard" style="display:none;">
+      <h3 id="checkinAreaLabel" style="margin-top:0;"></h3>
+      <label>How do you want to check in?</label>
+      <div class="row">
+        <button class="btn secondary small" id="modeTextBtn" onclick="setCheckinMode('text')" style="margin-top:0">Rate it (5 sliders)</button>
+        <button class="btn secondary small" id="modeManualBtn" onclick="setCheckinMode('manual')" style="margin-top:0">I already know the stage</button>
+      </div>
+
+      <div id="checkinTextMode">
+        <label>Rate what's going on right now, in this area</label>
+        <div class="axis-panel" id="ckAxisPanel"></div>
+        <label>Notes (optional)</label>
+        <textarea id="checkinText" placeholder="A few sentences about where things stand..."></textarea>
+      </div>
+      <div id="checkinManualMode" style="display:none;">
+        <label>Which stage does this feel like?</label>
+        <select id="checkinManualStage"></select>
+        <label>Micro-position within it (optional)</label>
+        <select id="checkinManualMicro"></select>
+      </div>
+      <label>Note (optional)</label>
+      <input type="text" id="checkinNote" placeholder="Anything you want to remember about this moment">
+      <button class="btn" onclick="saveCheckin()">Save check-in</button>
+      <div id="checkinResult"></div>
+    </div>
+
+    <div id="areaHistoryWrap"></div>
+    <button class="btn secondary small" onclick="exportJournal('cycle')">Export Cycle Journal entries</button>
+  </section>
+
+  <!-- HABIT LOG -->
+  <section class="tab" id="tab-habits">
+    <h2>Habit Log</h2>
+    <p class="lead">Each stage tends to come with its own small, recognizable habits. Check off whatever you notice
+      in yourself right now — you don't have to pick just one stage, since different parts of your life are usually
+      in different places at once.</p>
+
+    <div class="card">
+      <label>Link to a life area (optional)</label>
+      <select id="habitArea"><option value="">— none —</option></select>
+      <div id="habitChecklist"></div>
+      <label>Trigger / note (optional)</label>
+      <input type="text" id="habitNote" placeholder="What set this off, or what you noticed">
+      <button class="btn" onclick="saveHabitLog()">Save habit log</button>
+    </div>
+
+    <h3>What's recurring</h3>
+    <div class="card" id="habitStats"></div>
+
+    <h3>Past logs</h3>
+    <div class="card" id="habitHistory"></div>
+    <button class="btn secondary small" onclick="exportJournal('habits')">Export Habit Log entries</button>
+  </section>
+
+  <!-- STAGE GUIDE -->
+  <section class="tab" id="tab-guide">
+    <h2>Stage Guide</h2>
+    <p class="lead">The ten stages this tool uses, in plain language. Use this as a reference for recognizing habits
+      in yourself — not as a diagnosis.</p>
+    <div class="banner">
+      <b>About the micro-position (e.g. "4.5"):</b> Pattern Scan also reads a smaller slice of what you wrote —
+      usually your closing sentence — through the same digit-root formula, giving a second digit 0–9 nested inside
+      the stage. Across every stage, .5 always lands on a threshold/pivot flavor and .9 always lands on a
+      transparency/release flavor; the digits in between (.1–.4, .6–.8) use one shared, generic set of labels
+      rather than 81 individually-authored ones. It's the same math run twice, not a more precise instrument.
+    </div>
+    <div class="card" id="guideList"></div>
+  </section>
+
+</main>
+
+<footer>
+  Kairos Reflection Journal — a companion interpretive tool for the Kairos / LASE Stanfield's Axiom of Perpetuity project.<br>
+  Runs entirely in your browser. No data leaves this device.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="breathOverlay">
+  <div class="modal-box">
+    <h3 id="breathTitle">Breathing</h3>
+    <div class="breath-note" id="breathNote"></div>
+    <div class="breath-stage"><div class="breath-circle" id="breathCircleInner"></div></div>
+    <div id="breathPhase">Ready</div>
+    <div id="breathCount"></div>
+    <div class="modal-actions">
+      <button class="btn secondary small" onclick="closeBreathing()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STAGE DATA — plain-language layer over the canonical SAP
+   stage names used across this project (Kairos / LASE).
+   Canonical names are kept for consistency with the rest of
+   the repo; everything else here is written for a general
+   reader doing self-reflection, not a technical audience.
+   ============================================================ */
+const STAGES = [
+  { n:0, canonical:"PLENARA", human:"Open Field",
+    essence:"A pause. Cleared space before or after a cycle, not a stalled one.",
+    gift:"A genuine reset — clarity about what actually matters once the noise clears.",
+    shadow:"Avoidance dressed up as rest — using stillness to dodge a decision that's actually ready.",
+    mathAttribute:"0 — additive identity (a + 0 = a)", arcType:"neutral", polyvagal:"ventral",
+    trickster:"Coyote: 'The pause is not empty — it is full of potential.'",
+    somatic:"Rest your hand on your heart. Breathe slowly for 1 minute.",
+    habits:[
+      "Taking a break without immediately feeling guilty about it",
+      "Feeling directionless but not distressed by it",
+      "Clearing space before starting something new",
+      "Resisting the urge to fill the silence right away",
+      "A sense of 'nothing yet, and that's fine'"
+    ],
+    prompt:"What are you making room for by not rushing back in?" },
+  { n:1, canonical:"SPARK OF NAVIGATION", human:"Awakening",
+    essence:"A new direction announces itself, fragile and easily talked out of existing.",
+    gift:"The first honest commitment to a direction that's actually yours.",
+    shadow:"Endless idea-collecting that never becomes a single real step.",
+    mathAttribute:"1 — multiplicative identity (a \u00d7 1 = a)", arcType:"descending", polyvagal:"sympathetic",
+    trickster:"Anansi: 'The first impulse is fragile — protect it.'",
+    somatic:"Notice the first spark of intention in your body. Where do you feel it?",
+    habits:[
+      "A new idea keeps coming back uninvited",
+      "Feeling excited but unsure how to start",
+      "Talking about the idea more than acting on it yet",
+      "Protecting the idea from early criticism, including your own",
+      "Short bursts of research or journaling about it"
+    ],
+    prompt:"What's the smallest real step that would make this spark undeniable?" },
+  { n:2, canonical:"FORGE OF POLARITY", human:"Forming Identity",
+    essence:"Definition by contrast. You find out what you are partly by finding what you're not.",
+    gift:"A boundary that lets you show up more fully, not less.",
+    shadow:"An identity built entirely in opposition to something, with nothing of its own underneath.",
+    mathAttribute:"2 — the smallest, and only even, prime number", arcType:"descending", polyvagal:"dorsal",
+    trickster:"Loki: 'Boundaries create tension — that tension is creative.'",
+    somatic:"Place one hand on your belly, one on your chest. Feel the boundary between inner and outer.",
+    habits:[
+      "Noticing what you're against as clearly as what you're for",
+      "Setting a boundary and immediately feeling guilty about it",
+      "Comparing yourself to a person or situation you're not",
+      "Testing a relationship or role by pushing against it",
+      "Tension between who you were and who you're becoming"
+    ],
+    prompt:"What boundary are you drawing right now, and who or what is it separating you from?" },
+  { n:3, canonical:"ENGINE OF EXPRESSION", human:"Discipline & Output",
+    essence:"Momentum through repetition. Effort becomes visible, sometimes at the cost of reflection.",
+    gift:"Craft — skill built through repetition that starts to feel effortless.",
+    shadow:"Busyness as a hiding place from a feeling you don't want to sit with.",
+    mathAttribute:"3 — the first number that encloses space; digital roots of its multiples cycle 3-6-9", arcType:"descending", polyvagal:"sympathetic",
+    trickster:"Br'er Rabbit: 'Your discipline may be hiding unprocessed pain.'",
+    somatic:"Take three deep breaths, exhaling longer than inhaling. Notice any tension.",
+    habits:[
+      "Leaning hard on routine or discipline",
+      "Producing more but reflecting less",
+      "Irritation when the effort isn't paying off visibly yet",
+      "Using busyness to avoid a harder feeling underneath",
+      "Measuring your worth by output"
+    ],
+    prompt:"What discipline are you leaning on, and what might it be helping you not feel?" },
+  { n:4, canonical:"CRUCIBLE OF EQUILIBRIUM", human:"Testing Ground",
+    essence:"Things hold steady. The open question is whether that's rest or stalling.",
+    gift:"Real, earned stability you can build the next thing on.",
+    shadow:"A stall mistaken for peace — nothing moving because moving feels risky.",
+    mathAttribute:"4 — the first composite number (2\u00d72), built entirely from prior structure", arcType:"descending", polyvagal:"dorsal",
+    trickster:"Eshu: 'Stability is a pause, not a destination.'",
+    somatic:"Stand up, stretch your arms wide. Feel the stability of the ground.",
+    habits:[
+      "Things feel stable but a little flat",
+      "Double-checking whether the foundation is actually solid",
+      "Resisting change because 'it's finally working'",
+      "Quietly gathering resources or energy before a next move",
+      "Comparing the current calm to a past storm"
+    ],
+    prompt:"Is this stability restful, or is it stalling?" },
+  { n:5, canonical:"DYNAMO OF WILL", human:"The Choice Point",
+    essence:"A real decision point. The most consequential of the ten stages — advance, freeze, or retreat.",
+    gift:"A clear decision made from what you actually want, not fear.",
+    shadow:"Paralysis — staying in the weighing forever because no choice feels safe.",
+    mathAttribute:"\u03c6 \u2248 1.618 — the golden ratio, produced by a pentagon\u2019s diagonals", arcType:"bifurcation", polyvagal:"ventral",
+    trickster:"Coyote: 'Every choice opens and closes worlds — you have agency.'",
+    somatic:"Place your feet flat. Ask: 'What is mine to do?'",
+    habits:[
+      "Circling the same decision over and over",
+      "Feeling torn between two clearly named paths",
+      "Asking many people for their opinion on it",
+      "Procrastinating on a decision that's already been made emotionally",
+      "Noticing a felt lean toward one option, even unspoken"
+    ],
+    prompt:"If you stopped weighing this and just noticed what you're already leaning toward — what is it?" },
+  { n:6, canonical:"NEXUS OF HARMONY", human:"Integration",
+    essence:"Separate efforts start reinforcing each other. A peak-function stage.",
+    gift:"Separate efforts reinforcing each other into something bigger than any one part.",
+    shadow:"Overextension — adding more pieces because 'it's working' instead of consolidating.",
+    mathAttribute:"6 — the first perfect number (1+2+3 = 1\u00d72\u00d73 = 6)", arcType:"ascending", polyvagal:"ventral",
+    trickster:"Anansi: 'Weaving the threads of healing takes time — be patient.'",
+    somatic:"Hum or chant a single note. Feel the vibration in your chest.",
+    habits:[
+      "Things clicking into place across more than one area at once",
+      "Wanting to teach or share what you've learned",
+      "A pull to consolidate rather than start something new",
+      "Noticing how separate efforts are now reinforcing each other",
+      "A sense of 'this is working' you don't quite trust yet"
+    ],
+    prompt:"What are you ready to pass on to someone else, now that it's working?" },
+  { n:7, canonical:"LENS OF DISTILLATION", human:"Insight & Isolation",
+    essence:"Clarity that outpaces connection. The risk here is isolation, not confusion.",
+    gift:"Clarity sharp enough to actually change how you act.",
+    shadow:"Isolation mistaken for depth — insight nobody else ever hears.",
+    mathAttribute:"7 — the fourth prime; a heptagon can\u2019t be built with compass and straightedge", arcType:"ascending", polyvagal:"sympathetic",
+    trickster:"Loki: 'Isolation can become a trap — reach out.'",
+    somatic:"Place a hand on your throat. Softly say: 'I am here. I am not alone.'",
+    habits:[
+      "Seeing the pattern clearly but feeling alone in seeing it",
+      "Withdrawing to think rather than talking it through",
+      "Journaling more than talking to people about it",
+      "Insight arriving faster than the words to share it",
+      "A subtle sense of being 'ahead' of the people around you"
+    ],
+    prompt:"Who is one person you could actually say this insight out loud to, today?" },
+  { n:8, canonical:"VESSEL OF GROUNDING", human:"The Permanence Trap",
+    essence:"Two chambers: the Illusion of Arrival (this good thing is permanent) and the Illusion of Permanence " +
+      "(this bad thing is permanent). Both are the same trap — mistaking a state for a fact.",
+    gift:"Groundedness — a settled understanding that's actually still open to revision.",
+    shadow:"Rigid certainty defended past the point the evidence supports it.",
+    mathAttribute:"2\u00b3 = 8 — the first perfect cube; rotate its digit and you get the lemniscate (\u221e)", arcType:"ascending", polyvagal:"dorsal",
+    trickster:"Br'er Rabbit: 'Surrender is the only escape from the trap.'",
+    somatic:"Breathe into your back body. Imagine a soft space behind your heart.",
+    habits:[
+      "Insisting 'this is just how it is now,' good or bad",
+      "Defending a conclusion more than the evidence for it",
+      "Feeling either falsely triumphant or falsely stuck",
+      "Resisting new information that would complicate a settled story",
+      "A rigid certainty that doesn't quite match how it feels in your body"
+    ],
+    prompt:"What would you have to admit if this turned out to be temporary?" },
+  { n:9, canonical:"TRANSPARENCY OF THE GUIDE", human:"Dissolution & Handoff",
+    essence:"Grip loosening, for better or worse. A closing stage, not a final one — it feeds back into stage 0.",
+    gift:"A clean ending that leaves you free for what's next.",
+    shadow:"Grip — refusing to let something end long after it's actually over.",
+    mathAttribute:"9 — the highest single digit; the digital root of any multiple of 9 is always 9", arcType:"ascending", polyvagal:"ventral",
+    trickster:"Eshu: 'You have become the threshold — now rest.'",
+    somatic:"Lie down. Surrender your weight completely to the floor.",
+    habits:[
+      "Things loosening their grip, for better or worse",
+      "Wanting to document, teach, or pass on what happened",
+      "A felt readiness to let a chapter close, without a next one lined up",
+      "Reduced need to defend how things turned out",
+      "A pull toward rest before 'starting over'"
+    ],
+    prompt:"What are you ready to let end, even without knowing what starts next?" },
+];
+const stageByN = n => STAGES[n];
+
+/* ============================================================
+   GUIDED REFLECTION — 10 common life-topic intake flows.
+   Purely a text-composition aid: answers get stitched into one
+   passage and run through the exact same word/letter digit-root
+   engine as anything else typed into Pattern Scan. No separate
+   scoring path, no hidden logic.
+   ============================================================ */
+const GUIDED_TOPICS = [
+  { key:"love", icon:"💞", title:"Relationships & Love", domain:"Relationship",
+    blurb:"Current, past, or the absence of one",
+    opening:"What's actually going on in your romantic life right now — whether that's a relationship, a situationship, or the absence of one?",
+    followups:[
+      "What's the specific moment or interaction that's been sitting with you lately?",
+      "What do you find yourself wanting from this person, or from love in general, that you're not saying out loud?",
+      "What pattern from a past relationship do you notice repeating here?",
+      "If this person could hear one honest sentence from you right now, what would it be?"
+    ]},
+  { key:"career", icon:"🧭", title:"Career & Purpose", domain:"Career / Purpose",
+    blurb:"Work, calling, ambition",
+    opening:"What's the real state of things with your work right now — not the resume version, the honest one?",
+    followups:[
+      "What part of your work lights you up, even a little, these days?",
+      "What are you doing out of obligation rather than choice?",
+      "What would you attempt if you weren't worried about how it looked to others?",
+      "What's the quiet fear underneath your current career decision?"
+    ]},
+  { key:"family", icon:"🏠", title:"Family", domain:"Family",
+    blurb:"Parents, siblings, the family you're building",
+    opening:"What's alive right now in your relationship with your family — parents, siblings, or the family you're building?",
+    followups:[
+      "What role do you find yourself playing in this family, even when you don't want to?",
+      "What's something you've never said to them that keeps coming up?",
+      "Where are you repeating a pattern you swore you wouldn't?",
+      "What would it look like to show up differently the next time you see them?"
+    ]},
+  { key:"money", icon:"💰", title:"Money & Security", domain:"Money / Security",
+    blurb:"Finances, stability, scarcity",
+    opening:"What's your actual relationship with money and stability right now, beyond the numbers?",
+    followups:[
+      "What decision about money have you been putting off?",
+      "What did you learn about money growing up that you're still operating from?",
+      "Where does scarcity or fear show up in how you spend, save, or avoid looking?",
+      "What would 'enough' actually feel like for you?"
+    ]},
+  { key:"health", icon:"🌿", title:"Health & Body", domain:"Health & Body",
+    blurb:"Energy, sleep, how you feel in your skin",
+    opening:"What's the honest state of your body and health right now — energy, sleep, how you feel in your skin?",
+    followups:[
+      "What is your body trying to tell you that you've been talking over?",
+      "What habit are you keeping even though it's not serving you anymore?",
+      "Where do you notice tension or exhaustion showing up physically?",
+      "What would taking your body seriously actually require of you this week?"
+    ]},
+  { key:"identity", icon:"🪞", title:"Self-Worth & Identity", domain:"Self-Worth / Identity",
+    blurb:"Confidence, who you're becoming",
+    opening:"Who do you feel like you are right now, versus who you're trying to become?",
+    followups:[
+      "What do you do to earn approval that you wish you didn't have to do?",
+      "What's a compliment you have a hard time believing?",
+      "Where do you shrink yourself to keep the peace?",
+      "What would you do differently if you fully believed you were enough already?"
+    ]},
+  { key:"friendship", icon:"🤝", title:"Friendship & Belonging", domain:"Friendship / Belonging",
+    blurb:"Social connection, loneliness",
+    opening:"What's the state of your friendships and sense of belonging right now?",
+    followups:[
+      "Who have you been meaning to reach out to?",
+      "Where do you feel like you're performing rather than being known?",
+      "What kind of friend have you not been able to be lately, and why?",
+      "What would real belonging actually look like for you right now?"
+    ]},
+  { key:"grief", icon:"🕯️", title:"Grief & Loss", domain:"Grief / Loss",
+    blurb:"A person, a relationship, a version of your life",
+    opening:"What loss — a person, a relationship, a version of your life — is still present for you?",
+    followups:[
+      "What do you miss most, specifically?",
+      "What haven't you let yourself feel yet about this?",
+      "What would you say if you had one more conversation with what you lost?",
+      "What are you afraid moving on would mean about how much it mattered?"
+    ]},
+  { key:"creativity", icon:"✨", title:"Creativity & Passion Projects", domain:"Creativity / Passion Project",
+    blurb:"The thing you keep putting off",
+    opening:"What's the thing you want to make or build that you keep putting off?",
+    followups:[
+      "What's stopping you — time, fear, permission, something else?",
+      "Who are you afraid will judge this, and does that person's opinion actually matter here?",
+      "What's the smallest version of this you could start this week?",
+      "What would it mean about you if you actually finished it?"
+    ]},
+  { key:"transition", icon:"🚪", title:"Life Transitions & Big Decisions", domain:"Life Transition / Big Decision",
+    blurb:"The fork in the road you're standing at",
+    opening:"What's the big decision or transition you're standing in front of right now?",
+    followups:[
+      "What does each option actually cost you, honestly?",
+      "What are you most afraid of getting wrong here?",
+      "What does your gut say when you stop listing pros and cons?",
+      "What would you regret more: trying and failing, or not trying at all?"
+    ]},
+];
+
+function renderTopicGrid(){
+  const wrap = document.getElementById("topicGrid");
+  if(!wrap) return;
+  wrap.innerHTML = GUIDED_TOPICS.map(t => `
+    <button type="button" class="topic-tile" id="tile-${t.key}" onclick="openGuidedTopic('${t.key}')">
+      <span class="t-icon">${t.icon}</span>
+      <span class="t-title">${t.title}</span>
+      <span class="t-blurb">${t.blurb}</span>
+    </button>`).join("");
+}
+
+function surpriseTopic(){
+  const t = GUIDED_TOPICS[Math.floor(Math.random()*GUIDED_TOPICS.length)];
+  openGuidedTopic(t.key);
+  document.getElementById("guidedPanel").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function openGuidedTopic(key){
+  const t = GUIDED_TOPICS.find(x => x.key === key);
+  if(!t) return;
+  document.querySelectorAll(".topic-tile").forEach(el => el.classList.toggle("active", el.id === "tile-"+key));
+  const panel = document.getElementById("guidedPanel");
+  panel.innerHTML = `
+    <div class="guided-panel">
+      <button type="button" class="g-back" onclick="closeGuidedTopic()">‹ back to topics</button>
+      <h4>${t.icon} ${t.title}</h4>
+      <div class="guided-q">
+        <label class="g-opening">${t.opening}</label>
+        <textarea class="g-opening-input" id="gOpening" placeholder="Write as much or as little as you want..."></textarea>
+        ${t.followups.map((q,i)=>`
+        <label>${q}</label>
+        <textarea id="gFollow${i}" placeholder="Optional"></textarea>`).join("")}
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="composeGuidedReflection('${key}')">Build my reflection →</button>
+    </div>`;
+}
+
+function closeGuidedTopic(){
+  document.querySelectorAll(".topic-tile").forEach(el => el.classList.remove("active"));
+  document.getElementById("guidedPanel").innerHTML = "";
+}
+
+function composeGuidedReflection(key){
+  const t = GUIDED_TOPICS.find(x => x.key === key);
+  if(!t) return;
+  const opening = (document.getElementById("gOpening").value || "").trim();
+  if(!opening){ showToast("Answer at least the first question to build a reflection"); return; }
+  const parts = [opening];
+  t.followups.forEach((q,i)=>{
+    const val = (document.getElementById("gFollow"+i).value || "").trim();
+    if(val) parts.push(val);
+  });
+  const composed = parts.join("\n\n");
+  document.getElementById("scanText").value = composed;
+  if(!document.getElementById("scanTitle").value.trim()){
+    document.getElementById("scanTitle").value = t.title;
+  }
+  const domainSel = document.getElementById("scanDomain");
+  if([...domainSel.options].some(o=>o.value===t.domain)) domainSel.value = t.domain;
+  const details = document.getElementById("guidedExplore");
+  if(details) details.open = false;
+  closeGuidedTopic();
+  document.getElementById("scanText").scrollIntoView({behavior:"smooth", block:"center"});
+  document.getElementById("scanText").focus();
+  showToast("Reflection built — review it below, then hit Scan");
+}
+
+
+/* ============================================================
+   GEOMETRIC FORM -- ported 1:1 from the Tumbling Inversion engine's
+   own mapping (sap_kairos_tumbling_inversion.py: compute_inversion()),
+   so this visual reflects the computed state, not decoration:
+     0 boundary -> Circle          5 odd -> Perpendicular Axis
+     1 odd      -> Point/Spark     6 even -> Hexagon
+     2 even     -> Line/Spindle    7 odd -> Heptagon
+     3 odd      -> Triangle        8 even -> Octagon
+     4 even     -> Square          9 boundary -> Nonagon (-> Circle)
+   ============================================================ */
+const GEO_FORM = {
+  0:{key:"circle",   label:"Circle"},
+  1:{key:"point",    label:"Point / Spark"},
+  2:{key:"line",     label:"Line / Spindle"},
+  3:{key:"triangle", label:"Triangle"},
+  4:{key:"square",   label:"Square / Foundation"},
+  5:{key:"axis",     label:"Perpendicular Axis"},
+  6:{key:"hexagon",  label:"Hexagon"},
+  7:{key:"heptagon", label:"Heptagon"},
+  8:{key:"octagon",  label:"Octagon"},
+  9:{key:"nonagon",  label:"Nonagon \u2192 Circle"},
+};
+
+function polygonPoints(cx, cy, r, sides, rotateDeg){
+  const pts = [];
+  const rot = (rotateDeg||0) * Math.PI/180;
+  for(let i=0;i<sides;i++){
+    const a = rot + (i/sides)*Math.PI*2 - Math.PI/2;
+    pts.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+  }
+  return pts.map(p=>p.join(",")).join(" ");
+}
+
+// Inline SVG for a stage's geometric form. Uses currentColor so the caller
+// tints it via CSS `color`; `size` is in px. `extraClass` lets callers hook
+// larger hero renders (e.g. "geo-glyph-lg") without a second function.
+function geoGlyphSVG(stageN, size, extraClass){
+  size = size || 22;
+  const g = GEO_FORM[stageN] || GEO_FORM[0];
+  const c = 50, r = 34, sw = 5;
+  let inner = "";
+  switch(g.key){
+    case "circle":
+      inner = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="currentColor" stroke-width="${sw}"/>`;
+      break;
+    case "point":
+      inner = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+                <circle cx="${c}" cy="${c}" r="9" fill="currentColor"/>`;
+      break;
+    case "line":
+      inner = `<line x1="${c-r}" y1="${c}" x2="${c+r}" y2="${c}" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round"/>
+                <circle cx="${c-r}" cy="${c}" r="4" fill="currentColor"/>
+                <circle cx="${c+r}" cy="${c}" r="4" fill="currentColor"/>`;
+      break;
+    case "triangle":
+      inner = `<polygon points="${polygonPoints(c,c,r,3,0)}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>`;
+      break;
+    case "square":
+      inner = `<rect x="${c-r*0.78}" y="${c-r*0.78}" width="${r*1.56}" height="${r*1.56}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>`;
+      break;
+    case "axis":
+      inner = `<line x1="${c}" y1="${c-r}" x2="${c}" y2="${c+r}" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round"/>
+                <line x1="${c-r}" y1="${c}" x2="${c+r}" y2="${c}" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" opacity=".55"/>
+                <circle cx="${c}" cy="${c}" r="4" fill="currentColor"/>`;
+      break;
+    case "hexagon":
+      inner = `<polygon points="${polygonPoints(c,c,r,6,30)}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>`;
+      break;
+    case "heptagon":
+      inner = `<polygon points="${polygonPoints(c,c,r,7,0)}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>`;
+      break;
+    case "octagon":
+      inner = `<polygon points="${polygonPoints(c,c,r,8,22.5)}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>`;
+      break;
+    case "nonagon":
+      inner = `<polygon points="${polygonPoints(c,c,r,9,0)}" fill="none" stroke="currentColor" stroke-width="${sw-1.5}" stroke-linejoin="round" opacity=".55"/>
+                <circle cx="${c}" cy="${c}" r="${r*0.62}" fill="none" stroke="currentColor" stroke-width="${sw-1.5}"/>`;
+      break;
+    default:
+      inner = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="currentColor" stroke-width="${sw}"/>`;
+  }
+  return `<span class="geo-glyph${extraClass ? " "+extraClass : ""}" style="width:${size}px;height:${size}px;" title="${g.label}">
+    <svg viewBox="0 0 100 100" width="${size}" height="${size}">${inner}</svg>
+  </span>`;
+}
+function geoFormLabel(stageN){ return (GEO_FORM[stageN]||GEO_FORM[0]).label; }
+
+/* ============================================================
+   QUOTES — public-domain sources only (Tao Te Ching trans. James
+   Legge 1891, Meditations trans. George Long 1862, Enchiridion
+   trans. Elizabeth Carter 1758, KJV Bible, Heraclitus fragments).
+   Picked deterministically from the input text, not claimed to be
+   "understood" by anything — see the math panel for how.
+   ============================================================ */
+const QUOTES = {
+  0:[{text:"Attain to utmost emptiness; hold firm to stillness.", author:"Lao Tzu", source:"Tao Te Ching, ch. 16"},
+     {text:"To every thing there is a season, and a time to every purpose under heaven.", author:"Ecclesiastes 3:1", source:"KJV"}],
+  1:[{text:"A journey of a thousand miles begins with a single step.", author:"Lao Tzu", source:"Tao Te Ching, ch. 64"},
+     {text:"Waste no more time arguing what a good man should be. Be one.", author:"Marcus Aurelius", source:"Meditations"}],
+  2:[{text:"And God divided the light from the darkness.", author:"Genesis 1:4", source:"KJV"},
+     {text:"The best revenge is to be unlike him who performed the injury.", author:"Marcus Aurelius", source:"Meditations"}],
+  3:[{text:"It does not matter how slowly you go as long as you do not stop.", author:"attrib. Confucius", source:"traditional"},
+     {text:"First say to yourself what you would be; and then do what you have to do.", author:"Epictetus", source:"Enchiridion"}],
+  4:[{text:"The impediment to action advances action. What stands in the way becomes the way.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"He who knows he has enough is rich.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"}],
+  5:[{text:"You have power over your mind, not outside events. Realize this, and you will find strength.", author:"Marcus Aurelius", source:"Meditations"},
+     {text:"It's not what happens to you, but how you react to it that matters.", author:"attrib. Epictetus", source:"traditional"}],
+  6:[{text:"The highest good is like water. Water benefits all things and does not compete.", author:"Lao Tzu", source:"Tao Te Ching, ch. 8"},
+     {text:"That which is not good for the swarm is not good for the bee.", author:"Marcus Aurelius", source:"Meditations"}],
+  7:[{text:"Knowing others is wisdom; knowing yourself is enlightenment.", author:"Lao Tzu", source:"Tao Te Ching, ch. 33"},
+     {text:"For in much wisdom is much grief: and he that increaseth knowledge increaseth sorrow.", author:"Ecclesiastes 1:18", source:"KJV"}],
+  8:[{text:"No man ever steps in the same river twice, for it's not the same river and he's not the same man.", author:"Heraclitus", source:"Fragments"},
+     {text:"Everything that exists is in a manner the seed of that which will be.", author:"Marcus Aurelius", source:"Meditations"}],
+  9:[{text:"The hard and stiff will be broken. The soft and supple will prevail.", author:"Lao Tzu", source:"Tao Te Ching, ch. 76"},
+     {text:"A time to be born, and a time to die; a time to plant, and a time to pluck up that which is planted.", author:"Ecclesiastes 3:2", source:"KJV"}],
+};
+
+/* ============================================================
+   MICRO-STAGE (FRACTAL DRILL-DOWN)
+   The project's own canonical reference (SAP_STAGE_CANONICAL_REFERENCE.md
+   §6) describes each of the 9 Gates as containing 9 micro-stages
+   (Gate.micro, e.g. 4.5), with .5 always a Threshold and .9 always a
+   Transparency/release point across every Gate — that structural
+   convention is real and shared. The 81 *unique* per-Gate micro-names
+   in that doc are not reproduced here (only .0/.5/.9 are actually
+   defined there; .1-.4/.6-.8 aren't). Instead this uses one honest,
+   generic micro layer applied the same way at every Gate, computed
+   with the exact same transparent word/letter digit-root method as
+   the macro stage — just run again on a smaller slice of your text.
+   ============================================================ */
+const MICRO_FLAVOR = {
+  0:"Opening / clearing", 1:"First movement", 2:"Taking shape", 3:"Pushing further",
+  4:"Nearly settled", 5:"Threshold — the pivot point within this stage", 6:"Past the pivot",
+  7:"Loosening", 8:"Gripping — watch for the trap here too",
+  9:"Transparency — the release point within this stage",
+};
+
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function pickQuote(stage, seed){
+  const arr = QUOTES[stage] || QUOTES[0];
+  const idx = hashStr(String(seed||stage)) % arr.length;
+  return arr[idx];
+}
+
+/* ============================================================
+   BREATHING — standard, well-known techniques (box breathing,
+   coherent breathing, 4-7-8, the physiological sigh, humming
+   exhale). Not proprietary to this project; picked per stage for
+   how they feel, not backed by a claim that they change outcomes.
+   ============================================================ */
+const BREATHING = {
+  0:{ name:"Extended-Exhale Rest Breath", cycles:5,
+      note:"A pause breath. Nothing to fix here — just noticing the space.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+  1:{ name:"Energizing Breath", cycles:6,
+      note:"A small lift in alertness, without tipping into urgency.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:2,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"}] },
+  2:{ name:"Box Breathing", cycles:4,
+      note:"An even breath with clean edges — mirrors the boundary you're drawing.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.6)"},{label:"Hold",seconds:4,scale:"scale(1.6)"},{label:"Exhale",seconds:4,scale:"scale(0.85)"},{label:"Hold",seconds:4,scale:"scale(0.85)"}] },
+  3:{ name:"Coherent Breathing", cycles:6,
+      note:"A steady, even breath — a rest from the push, not a reward for it.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  4:{ name:"4-7-8 Calming Breath", cycles:4,
+      note:"A well-known calming pattern — useful when 'stable' still feels tense.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hold",seconds:7,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.8)"}] },
+  5:{ name:"Physiological Sigh", cycles:3,
+      note:"A fast nervous-system reset, often used right before a hard decision.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:6,scale:"scale(0.8)"}] },
+  6:{ name:"Coherent Breathing", cycles:6,
+      note:"An even, resonant breath — matches a stage where things are clicking together.",
+      pattern:[{label:"Inhale",seconds:5,scale:"scale(1.55)"},{label:"Exhale",seconds:5,scale:"scale(0.85)"}] },
+  7:{ name:"Humming Exhale", cycles:5,
+      note:"Humming on the exhale stimulates the vagus nerve — brings insight back into the body.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Hum, exhale",seconds:7,scale:"scale(0.85)"}] },
+  8:{ name:"Extended-Exhale Release", cycles:5,
+      note:"A release breath for when certainty is doing the gripping.",
+      pattern:[{label:"Inhale",seconds:2,scale:"scale(1.3)"},{label:"Top-up inhale",seconds:1,scale:"scale(1.6)"},{label:"Long exhale",seconds:8,scale:"scale(0.8)"}] },
+  9:{ name:"Extended-Exhale Rest Breath", cycles:6,
+      note:"A long, slow close — the exhale that lets a chapter end.",
+      pattern:[{label:"Inhale",seconds:4,scale:"scale(1.5)"},{label:"Exhale",seconds:8,scale:"scale(0.85)"}] },
+};
+
+let breathTimer = null;
+function openBreathing(stageNum){
+  const b = BREATHING[stageNum];
+  document.getElementById("breathTitle").textContent = `Stage ${stageNum} — ${b.name}`;
+  document.getElementById("breathNote").textContent = b.note;
+  document.getElementById("breathOverlay").style.display = "flex";
+  document.getElementById("breathCircleInner").style.transform = "scale(1)";
+  clearTimeout(breathTimer);
+  breathTimer = setTimeout(()=>runBreathPhase(b, 0, 1), 400);
+}
+function closeBreathing(){
+  clearTimeout(breathTimer);
+  document.getElementById("breathOverlay").style.display = "none";
+}
+function runBreathPhase(b, phaseIdx, cycleNum){
+  if(cycleNum > b.cycles){
+    document.getElementById("breathPhase").textContent = "Done";
+    document.getElementById("breathCount").textContent = `Completed ${b.cycles} cycles.`;
+    document.getElementById("breathCircleInner").style.transitionDuration = "1.5s";
+    document.getElementById("breathCircleInner").style.transform = "scale(1)";
+    return;
+  }
+  const phase = b.pattern[phaseIdx];
+  const circle = document.getElementById("breathCircleInner");
+  document.getElementById("breathPhase").textContent = phase.label;
+  document.getElementById("breathCount").textContent = `Cycle ${cycleNum} of ${b.cycles}`;
+  circle.style.transitionDuration = phase.seconds + "s";
+  circle.style.transform = phase.scale;
+  breathTimer = setTimeout(()=>{
+    const nextIdx = (phaseIdx + 1) % b.pattern.length;
+    const nextCycle = nextIdx === 0 ? cycleNum + 1 : cycleNum;
+    runBreathPhase(b, nextIdx, nextCycle);
+  }, phase.seconds * 1000);
+}
+
+// Ported from engine/container_rule_engine.py — kept for the "show the math" panel.
+// Inversion Principle, ported verbatim from engine/container_rule_engine.py's
+// INVERSION table. This is a labeling convention (odd stage number = physically
+// unstable/consciously stable, even = the reverse, stage 0 = neutral) — a real,
+// consistent part of this project's vocabulary, not a separate measurement.
+/* ============================================================
+   REAL TUMBLING INVERSION ENGINE — ported line-for-line from this
+   project's own backend (sap_kairos_geometry.py, sap_kairos_tumbling_
+   inversion.py, sap_kairos_stage_paradox.py), NOT reinvented. No word
+   count, no letter count, anywhere in this file. The only input is a
+   5-axis NSDT vector -- Complexity, Stability, Adaptability, Tension,
+   Coherence, each 0-10 -- that you rate directly. The backend's own
+   text->NSDT step is AI-scored (see sap_kairos_nsdt_estimator.py) and
+   requires a live Kairos AI backend; there is no honest deterministic
+   way to fake that step offline, so offline mode has you self-rate the
+   same five axes the AI would otherwise estimate, and runs the exact
+   same real classifier and stage-paradox math from there.
+   ============================================================ */
+
+const NSDT_AXIS_META = [
+  { key:"N", label:"Complexity",
+    low:"One simple thread", high:"Many entangled, competing factors" },
+  { key:"S", label:"Stability",
+    low:"Shaky, in flux", high:"Solid ground, settled" },
+  { key:"D", label:"Adaptability",
+    low:"Rigid, stuck", high:"Flexibly meeting what's happening" },
+  { key:"T", label:"Tension",
+    low:"At ease", high:"Taut, urgent, under strain" },
+  { key:"C", label:"Coherence",
+    low:"Fragmented, contradictory", high:"A clear, coherent thread" },
+];
+
+// STAGE_CENTROIDS -- reconciled against the confirmed N/S/D/T/C axes.
+// See sap_kairos_geometry.py's own extensive derivation notes: S and C are
+// solved from compute_inversion()'s parity formulas so each stage's known
+// physical/conscious stability direction is produced by construction; T
+// and D are seeded from each stage's polyvagal state; N has no formula
+// pull anywhere in the source and is an explicit, disclosed standalone
+// curve. Ported verbatim, not re-derived here.
+const STAGE_CENTROIDS = {
+  0:[0.0,3.93,8.0,2.5,2.0], 1:[1.5,4.43,5.5,7.0,7.5], 2:[3.0,7.79,2.0,6.5,6.0],
+  3:[4.0,4.14,5.5,7.0,8.1], 4:[4.5,8.21,2.0,6.5,6.4], 5:[5.5,1.79,8.0,2.5,6.4],
+  6:[7.0,7.5,8.0,2.5,1.0], 7:[7.5,3.29,5.5,7.0,9.5], 8:[6.0,9.93,2.0,6.5,5.6],
+  9:[3.0,3.93,8.0,2.5,4.0],
+};
+const AXIS_WEIGHTS = [1.0,1.5,1.5,1.0,0.8];
+const AXIS_SCALES = [10.0,10.0,10.0,10.0,10.0];
+const NSDT_TEMPERATURE = 0.7;
+
+function weightedDistance(x, centroid){
+  let sum = 0;
+  for(let i=0;i<5;i++){
+    const diff = (x[i]-centroid[i]) / AXIS_SCALES[i];
+    sum += AXIS_WEIGHTS[i] * diff * diff;
+  }
+  return Math.sqrt(sum);
+}
+
+// Nearest-centroid classification with a softmax posterior, exactly as
+// KairosBayesian.posterior() computes it server-side (minus the previous-
+// stage adjacency mask, which needs multi-turn session state this
+// standalone offline mode doesn't track).
+function classifyStage(nsdt0to10){
+  const distances = [];
+  for(let s=0;s<10;s++) distances.push(weightedDistance(nsdt0to10, STAGE_CENTROIDS[s]));
+  const logits = distances.map(d => -d / Math.max(NSDT_TEMPERATURE, 0.05));
+  const maxLogit = Math.max(...logits);
+  const exp = logits.map(l => Math.exp(l - maxLogit));
+  const sumExp = exp.reduce((a,b)=>a+b, 0);
+  const posterior = exp.map(e => e / sumExp);
+  let stage = 0, best = -1;
+  posterior.forEach((p,i)=>{ if(p>best){ best=p; stage=i; } });
+  const expected = posterior.reduce((acc,p,i)=>acc+i*p, 0);
+  const entropy = -posterior.reduce((acc,p)=>acc + p*Math.log(p+1e-12), 0);
+  return { stage, posterior, confidence: best, expected, entropy };
+}
+
+function toTumblingScale(nsdt0to10){ return nsdt0to10.map(v => v*10); }
+
+const GEOMETRIC_FORM_BY_STAGE = {
+  0:"Circle", 1:"Point/Spark", 2:"Line/Spindle", 3:"Triangle", 4:"Square/Foundation",
+  5:"Perpendicular Axis", 6:"Hexagon", 7:"Heptagon", 8:"Octagon", 9:"Nonagon → Circle",
+};
+
+// Ported from compute_inversion() in sap_kairos_tumbling_inversion.py.
+// nsdt100 is the 0-100-rescaled vector -- the real backend does this
+// rescale once, centrally, before any of the inversion/paradox math runs.
+function computeInversionJS(nsdt100, stage){
+  const [N,S,D,T,C] = nsdt100;
+  const physical = (S*0.7) + (100-T)*0.3;
+  const conscious = (D*0.5) + (C*0.5);
+  const divergence = Math.abs(S - T);
+  let parity;
+  if(stage===0 || stage===9) parity = "boundary";
+  else parity = (stage%2===0) ? "even" : "odd";
+  return {
+    physical: Math.round(physical*10)/10,
+    conscious: Math.round(conscious*10)/10,
+    divergence: Math.round(divergence*10)/10,
+    divergenceCategory: divergenceCategory(divergence),
+    geometricForm: GEOMETRIC_FORM_BY_STAGE[stage],
+    parity,
+  };
+}
+
+function divergenceCategory(divergence){
+  if(divergence < 15) return "converged (aligned)";
+  if(divergence < 35) return "moderate";
+  return "diverged (high misalignment)";
+}
+
+// Stage 5 -- Middle Path Gateway (detect_middle_path).
+function detectMiddlePath(nsdt100){
+  const [N,S,D,T,C] = nsdt100;
+  const witnessScore = (D*0.4) + (C*0.4) - (T*0.2);
+  return { witnessScore: Math.round(witnessScore*10)/10, accessed: witnessScore > 50 };
+}
+
+// Stage 6 -- the Conductor's Paradox (classify_flow_quality).
+function classifyFlowQuality(nsdt100, middlePathAccessed, stage){
+  const [N,S,D,T,C] = nsdt100;
+  const conductorScore = (C*0.5) + (D*0.3) + (100 - Math.abs(T-50))*0.2;
+  const inv = computeInversionJS(nsdt100, 6);
+  const brittleSignature = inv.physical > 70 && inv.conscious < 50;
+  const sustainable = middlePathAccessed && conductorScore >= 50 && !brittleSignature;
+  return sustainable ? {
+    flowType:"sustainable", conductorScore: Math.round(conductorScore*10)/10,
+    directive:"Sustainable Flow — the Witness Position remains active beneath the peak performance. You're harvesting this flow state while staying aware it's temporary; Stage 7 will arrive as conscious extraction, not crisis.",
+    stage7Arrival:"invitation",
+  } : {
+    flowType:"brittle", conductorScore: Math.round(conductorScore*10)/10,
+    directive:"Brittle Flow — there's no meta-awareness beneath this peak; you HAVE BECOME the flow rather than experiencing it. When Stage 7 arrives, it will arrive as ambush rather than invitation.",
+    stage7Arrival:"ambush",
+  };
+}
+
+// Stage 7 -- the Individuation Crucible (classify_crucible_mode).
+function classifyCrucibleMode(nsdt100, middlePathAccessed, history100){
+  const [N,S,D,T,C] = nsdt100;
+  const distillationScore = (D*0.4) + (C*0.4) + (100-T)*0.2;
+  const inv = computeInversionJS(nsdt100, 7);
+  const distillation = middlePathAccessed && distillationScore >= 55 && inv.conscious > inv.physical;
+  let shadowSurfacing = false;
+  if(history100 && history100.length >= 2){
+    const prevC = history100[history100.length-2][4];
+    shadowSurfacing = T > 60 && C > prevC;
+  }
+  const base = distillation ? {
+    crucibleMode:"distillation", distillationScore: Math.round(distillationScore*10)/10,
+    directive:"Conscious Distillation — this breakdown burns the costume, not the wearer. What's being extracted is the accumulated identity structure — the roles, the attachments — not your essential self.",
+  } : {
+    crucibleMode:"collapse", distillationScore: Math.round(distillationScore*10)/10,
+    directive:"Chaotic Collapse — without the Witness Position, this feels like fighting the burn rather than being refined by it. There's no framework yet for reading the breakdown as directed.",
+  };
+  base.shadowSurfacing = shadowSurfacing;
+  return base;
+}
+
+// Ported from compute_arc_direction() -- needs at least 2 saved history
+// vectors (on the 0-100 scale) to say anything; otherwise "indeterminate".
+function computeArcDirection(history100){
+  if(!history100 || history100.length < 2) return { arc:"indeterminate", confidence:0 };
+  const deltas = [];
+  for(let i=1;i<history100.length;i++){
+    const prev = history100[i-1], curr = history100[i];
+    deltas.push([0,1,2,3,4].map(j => curr[j]-prev[j]));
+  }
+  const avg = idx => deltas.reduce((a,d)=>a+d[idx],0) / deltas.length;
+  const avgS = avg(1), avgD = avg(2), avgT = avg(3), avgC = avg(4);
+  const descendingScore = avgS - avgD;
+  const ascendingScore = avgT + avgC;
+  if(descendingScore > 5 && ascendingScore < -2) return { arc:"descending", confidence: Math.min(100, descendingScore*5) };
+  if(ascendingScore > 5 && descendingScore < -2) return { arc:"ascending", confidence: Math.min(100, ascendingScore*5) };
+  return { arc:"plateau", confidence:50 };
+}
+
+// Stage 8 -- the Crystallization Paradox (classify_crystallization).
+function classifyCrystallization(nsdt100, middlePathAccessed, history100){
+  const [N,S,D,T,C] = nsdt100;
+  const divergence = Math.abs(S - T);
+  const { arc } = history100 && history100.length >= 2 ? computeArcDirection(history100) : { arc:"indeterminate" };
+  const gratitudeEngaged = divergence < 25 || (middlePathAccessed && arc==="ascending" && divergence < 30);
+  const dissolution = gratitudeEngaged && divergence < 30;
+  return {
+    trajectory: dissolution ? "dissolution" : "shattering",
+    divergence: Math.round(divergence*10)/10,
+    gratitudeEngaged, arc,
+    directive: dissolution
+      ? "Dissolution — the crystal is returning to solution, not shattering. The structure reorganizes but what it learned is preserved, the way a dissolved crystal's information survives in solution."
+      : "Shattering — this is the Crystallization Paradox at its most dangerous: maximum structural perfection is also maximum brittleness. The divergence between what's projected and what's actually being carried is too wide to hold at once.",
+  };
+}
+
+// Stage 8 Gratitude Mechanism (engage_gratitude_mechanism): converges
+// Stability and Tension toward their average and boosts Coherence. Complexity
+// and Adaptability are left untouched -- gratitude doesn't change what
+// happened, only how the divergence it created is held.
+function engageGratitudeMechanism(nsdt100){
+  const [N,S,D,T,C] = nsdt100;
+  const avg = (S+T)/2;
+  return [N, avg, D, avg, Math.min(100, C+10)];
+}
+
+const THERAPEUTIC_NOTE_BY_STAGE = {
+  5:"Kairos: Bifurcation point. You have full agency to progress or return. No wrong choice — only honest choice.",
+  7:"Stage 7: Insight without connection. Consider somatic grounding or reaching out to a trusted other.",
+};
+function getTherapeuticNote(stage, trapLikely){
+  if(stage===8) return trapLikely
+    ? "⚠️ Stage 8 High Trap: False certainty detected. Offer Release Protocol: gratitude, duality, Ma'at, or witness."
+    : "Stage 8 detected. Kairos invitation: 'What would it mean to let go?'";
+  return THERAPEUTIC_NOTE_BY_STAGE[stage] || "Continue holding space. Trust the process.";
+}
+
+// Ties the whole real engine together for one NSDT reading. history100 is
+// an array of past 0-100-scale NSDT vectors (oldest first), used only for
+// the Stage 7 shadow-surfacing signal and the Stage 8 dynamic arc -- both
+// need at least 2 prior saved entries with a stored NSDT vector.
+function computeReadingFromNSDT(nsdt0to10, history100, seedForQuote){
+  const clean = nsdt0to10.map(v => Math.max(0, Math.min(10, Number(v)||0)));
+  const cls = classifyStage(clean);
+  const stage = cls.stage;
+  const nsdt100 = toTumblingScale(clean);
+  const historyPlusCurrent = (history100||[]).concat([nsdt100]);
+  const inv = computeInversionJS(nsdt100, stage);
+  const mp = detectMiddlePath(nsdt100);
+
+  let paradox = null;
+  if(stage===6) paradox = { type:"flow", ...classifyFlowQuality(nsdt100, mp.accessed, stage) };
+  else if(stage===7) paradox = { type:"crucible", ...classifyCrucibleMode(nsdt100, mp.accessed, historyPlusCurrent) };
+  else if(stage===8) paradox = { type:"crystallization", ...classifyCrystallization(nsdt100, mp.accessed, historyPlusCurrent) };
+
+  const trapLikely = stage===8 && paradox && paradox.trajectory === "shattering";
+
+  return {
+    nsdt: clean, nsdt100, stage, posterior: cls.posterior, confidence: cls.confidence,
+    expected: cls.expected, entropy: cls.entropy,
+    physical: inv.physical, conscious: inv.conscious, divergence: inv.divergence,
+    divergenceCategory: inv.divergenceCategory, geometricForm: inv.geometricForm, parity: inv.parity,
+    middlePath: mp, paradox, therapeuticNote: getTherapeuticNote(stage, trapLikely),
+    quote: pickQuote(stage, seedForQuote || stage),
+  };
+}
+
+function renderAxisPanel(containerId, idPrefix){
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+  wrap.innerHTML = NSDT_AXIS_META.map(a => `
+    <div class="axis-row">
+      <div class="axis-head">
+        <span class="axis-label">${a.label}</span>
+        <span class="axis-value" id="${idPrefix}val-${a.key}">5.0</span>
+      </div>
+      <input type="range" class="axis-slider" id="${idPrefix}${a.key}" min="0" max="10" step="0.5" value="5"
+        oninput="document.getElementById('${idPrefix}val-${a.key}').textContent = Number(this.value).toFixed(1)">
+      <div class="axis-ends"><span>${a.low}</span><span>${a.high}</span></div>
+    </div>`).join("");
+}
+function readAxisValues(idPrefix){
+  const prefix = idPrefix || "axis-";
+  return NSDT_AXIS_META.map(a => Number(document.getElementById(prefix+a.key).value) || 0);
+}
+function setAxisValues(idPrefix, values){
+  const prefix = idPrefix || "axis-";
+  NSDT_AXIS_META.forEach((a,i)=>{
+    const el = document.getElementById(prefix+a.key);
+    const lab = document.getElementById(prefix+"val-"+a.key);
+    if(el){ el.value = values[i]; }
+    if(lab){ lab.textContent = Number(values[i]).toFixed(1); }
+  });
+}
+// History of past 0-100-scale NSDT vectors across both Pattern Scan entries
+// and Cycle Journal check-ins that carry a real computed reading, oldest
+// first -- feeds Stage 7 shadow-surfacing and the Stage 8 dynamic arc.
+function getAllNSDT100History(){
+  const fromScans = STATE.patternEntries
+    .filter(e => e.reading && e.reading.nsdt100)
+    .map(e => ({ ts:e.ts, nsdt100:e.reading.nsdt100 }));
+  const fromCheckins = (STATE.checkins||[])
+    .filter(c => c.reading && c.reading.nsdt100)
+    .map(c => ({ ts:c.ts, nsdt100:c.reading.nsdt100 }));
+  return fromScans.concat(fromCheckins).sort((a,b)=>a.ts-b.ts).map(x=>x.nsdt100);
+}
+
+const INVERSION = {
+  0:{physical:"Neutral",conscious:"Neutral"}, 1:{physical:"Unstable",conscious:"Stable"},
+  2:{physical:"Stable",conscious:"Unstable"}, 3:{physical:"Unstable",conscious:"Stable"},
+  4:{physical:"Stable",conscious:"Unstable"}, 5:{physical:"Unstable",conscious:"Stable"},
+  6:{physical:"Stable",conscious:"Unstable"}, 7:{physical:"Unstable",conscious:"Stable"},
+  8:{physical:"Stable",conscious:"Unstable"}, 9:{physical:"Unstable",conscious:"Stable"},
+};
+function inversionHTML(stage, reading){
+  const inv = INVERSION[stage];
+  const real = reading && reading.stage === stage ? reading : null;
+  return `<div style="margin-top:10px; font-size:.82rem; color:var(--text-dim);">
+    <b style="color:var(--text)">Inversion:</b> physically ${inv.physical.toLowerCase()}, consciously ${inv.conscious.toLowerCase()}
+    <span style="color:var(--text-faint)"> — ${stage===0 ? "the void carries neither charge" : (stage%2===1 ? "odd-numbered stages read as outwardly shaky but inwardly settled" : "even-numbered stages read as outwardly settled but inwardly unsettled")}</span>
+    ${real ? `<br><span style="color:var(--text-faint)">From your numbers: physical stability ${real.physical}/100, consciousness stability ${real.conscious}/100, divergence ${real.divergence} (${real.divergenceCategory}).</span>` : ""}
+  </div>`;
+}
+
+// Stage 5 three-way fork, adapted from container_rule_engine.py's own Stage 5
+// signal text. Deliberately NOT computing the sigmoid P(success)/P(regression)
+// formula from the canonical doc — those weights were never fit to real
+// outcomes, so a percentage here would be invented precision, not a result.
+function stage5ForkHTML(reading){
+  const mp = reading && reading.middlePath;
+  return `<div class="banner" style="margin-top:14px;">
+    <b>Stage 5 is a fork, not just a number.</b> This project's own model treats Stage 5 as the one point
+    where the whole trajectory can still reverse — every other stage runs forward once you're through it.
+    Three directions the framework names: <b>Advance</b> (commit and push through), <b>Freeze / Regress</b>
+    (consciously step back rather than force it), or <b>Crisis</b> (forced collapse if you push without
+    being ready).
+    ${mp ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-soft); font-size:.85rem;">
+      <b>Witness score, computed from your numbers: ${mp.witnessScore}</b> (real formula: 0.4×Adaptability + 0.4×Coherence − 0.2×Tension, threshold 50) —
+      ${mp.accessed
+        ? "above threshold: the Middle Path is accessed. Some part of you has stepped outside the tumbling axis far enough to observe it, not just ride it."
+        : "below threshold: still inside the tumble, not yet observing it from outside."}
+    </div>` : ""}
+  </div>`;
+}
+
+function stageColor(n){
+  const hue = (n*36)%360;
+  return `hsl(${hue},55%,58%)`;
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORAGE_KEY = "kairos_reflection_journal_v1";
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.warn("Could not load saved data", e); }
+  return { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+}
+let STATE = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(36).slice(2))); }
+function fmtDate(ts){ const d = new Date(ts); return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) + " " + d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); }
+
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 1800);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("active", s.id==="tab-"+name));
+  if(name==="cycle") renderCycleTab();
+  if(name==="habits") renderHabitsTab();
+  if(name==="guide") renderGuide();
+  if(name==="scan") renderScanHistory();
+  if(name==="home") renderHomeStats();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+
+/* ============================================================
+   DISCLAIMER BANNER
+   ============================================================ */
+function dismissBanner(){
+  document.getElementById("disclaimerBanner").style.display="none";
+  localStorage.setItem("kairos_banner_dismissed","1");
+}
+if(localStorage.getItem("kairos_banner_dismissed")) {
+  document.addEventListener("DOMContentLoaded", ()=>{
+    document.getElementById("disclaimerBanner").style.display="none";
+  });
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHomeStats(){
+  const p = STATE.patternEntries.length, a = STATE.areas.length, c = STATE.checkins.length, h = STATE.habitLogs.length;
+  const streak = computeStreakDays();
+  document.getElementById("homeStats").innerHTML = `
+    ${streak > 0 ? `<div class="streak-pill">🔥 ${streak} day${streak===1?"":"s"} in a row</div>` : ""}
+    <div class="row">
+      <div class="card tight"><b>${p}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Pattern Scan entries</span></div>
+      <div class="card tight"><b>${a}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Life areas tracked</span></div>
+      <div class="card tight"><b>${c}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Cycle check-ins</span></div>
+      <div class="card tight"><b>${h}</b><br><span style="color:var(--text-dim);font-size:.82rem;">Habit logs</span></div>
+    </div>`;
+  renderAISettingsStatus();
+  const urlInput = document.getElementById("aiBackendUrl");
+  if(urlInput && !urlInput.value) urlInput.value = getBackendURL();
+}
+
+function exportAll(){
+  downloadJSON(STATE, "kairos-reflection-journal-all.json");
+}
+function exportJournal(kind){
+  const map = { pattern:"patternEntries", cycle:["areas","checkins"], habits:"habitLogs" };
+  let data;
+  if(kind==="cycle") data = { areas: STATE.areas, checkins: STATE.checkins };
+  else data = { [map[kind]]: STATE[map[kind]] };
+  downloadJSON(data, `kairos-${kind}-journal.json`);
+}
+function downloadJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function clearAllData(){
+  if(confirm("This deletes every entry in all three journals from this browser. This can't be undone. Export first if you want a backup. Continue?")){
+    STATE = { patternEntries:[], areas:[], checkins:[], habitLogs:[] };
+    saveState();
+    renderHomeStats(); renderScanHistory(); renderCycleTab(); renderHabitsTab();
+    showToast("All data cleared");
+  }
+}
+
+/* ============================================================
+   PATTERN SCAN
+   ============================================================ */
+function stageBadgeHTML(n){
+  return `<span class="stage-badge" style="background:${stageColor(n)}"><span style="color:#100e17">${geoGlyphSVG(n,15)}</span>Stage ${n} — ${stageByN(n).canonical}</span>`;
+}
+
+function paradoxHTML(reading){
+  const p = reading.paradox;
+  if(!p) return "";
+  if(p.type==="flow"){
+    return `<div class="paradox-box paradox-${p.flowType}">
+      <b>Stage 6 — Conductor's Paradox: ${p.flowType==="sustainable"?"Sustainable Flow":"Brittle Flow"}</b>
+      <div style="font-size:.8rem; color:var(--text-faint); margin:4px 0;">Conductor score ${p.conductorScore}/100</div>
+      <p>${p.directive}</p>
+    </div>`;
+  }
+  if(p.type==="crucible"){
+    return `<div class="paradox-box paradox-${p.crucibleMode}">
+      <b>Stage 7 — Individuation Crucible: ${p.crucibleMode==="distillation"?"Conscious Distillation":"Chaotic Collapse"}</b>
+      <div style="font-size:.8rem; color:var(--text-faint); margin:4px 0;">Distillation score ${p.distillationScore}/100${p.shadowSurfacing ? " · shadow surfacing detected" : ""}</div>
+      <p>${p.directive}</p>
+    </div>`;
+  }
+  if(p.type==="crystallization"){
+    return `<div class="paradox-box paradox-${p.trajectory}">
+      <b>Stage 8 — Crystallization Paradox: ${p.trajectory==="dissolution"?"Dissolution":"Shattering"}</b>
+      <div style="font-size:.8rem; color:var(--text-faint); margin:4px 0;">Divergence ${p.divergence} · arc: ${p.arc}</div>
+      <p>${p.directive}</p>
+      ${p.trajectory==="shattering" ? `<button class="btn secondary small" style="margin-top:8px" onclick="applyGratitudeMechanism()">Engage the Gratitude Mechanism</button>
+      <p style="font-size:.78rem; color:var(--text-faint); margin-top:6px;">This won't change what happened. It's a real re-scoring: converges your Stability and Tension sliders toward their average and lifts Coherence. Click it, then hit Scan again to see the shift.</p>` : ""}
+    </div>`;
+  }
+  return "";
+}
+
+function applyGratitudeMechanism(){
+  const current = readAxisValues("axis-");
+  const nsdt100 = toTumblingScale(current);
+  const shifted100 = engageGratitudeMechanism(nsdt100);
+  const shifted0to10 = shifted100.map(v => Math.round((v/10)*2)/2);
+  setAxisValues("axis-", shifted0to10);
+  runScan();
+  showToast("Gratitude Mechanism applied — Stability and Tension converged, Coherence lifted");
+}
+
+function readingHTML(reading, forEntryId){
+  if(!reading){
+    return `<div class="empty">Set the sliders above, then hit Scan.</div>`;
+  }
+  const s = stageByN(reading.stage);
+  const confPct = Math.round(reading.confidence*100);
+  return `
+    <div class="reading">
+      <div class="reading-hero">
+        <span style="color:${stageColor(reading.stage)}">${geoGlyphSVG(reading.stage,52,"geo-glyph-lg")}</span>
+        <div>
+          ${stageBadgeHTML(reading.stage)}
+          <div class="stagename">${s.human} <span style="color:var(--text-faint); font-weight:400; font-size:.85rem;">(${confPct}% classifier confidence)</span></div>
+        </div>
+      </div>
+      <div style="color:var(--text-faint); font-size:.78rem; letter-spacing:.03em; text-transform:uppercase; margin:2px 0 6px 0;">
+        Geometric form: ${reading.geometricForm} &nbsp;·&nbsp; Math attribute: ${s.mathAttribute}
+      </div>
+      <div class="human">${s.essence}</div>
+      <div class="shadow-gift">
+        <div class="sg-col sg-gift"><span class="sg-label">Gift, if you work with it</span>${s.gift}</div>
+        <div class="sg-col sg-shadow"><span class="sg-label">Shadow, if you stay stuck</span>${s.shadow}</div>
+      </div>
+      ${inversionHTML(reading.stage, reading)}
+      <div><b style="font-size:.85rem;color:var(--text-dim)">Habits often seen at this stage:</b>
+        <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      </div>
+      <div class="prompt-box">${s.prompt}</div>
+      ${reading.stage===5 ? stage5ForkHTML(reading) : ""}
+      ${paradoxHTML(reading)}
+      <div class="somatic-box"><b>Somatic invitation</b> <span style="color:var(--text-faint); font-size:.78rem;">(${s.polyvagal} state)</span><br>${s.somatic}</div>
+      <div class="trickster-box">${s.trickster}</div>
+      ${reading.therapeuticNote ? `<div class="note-box">${reading.therapeuticNote}</div>` : ""}
+      <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
+      <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
+      <details class="math">
+        <summary>Show the math</summary>
+        <table>
+          <tr><td>Your inputs (0–10)</td><td>N ${reading.nsdt[0]} · S ${reading.nsdt[1]} · D ${reading.nsdt[2]} · T ${reading.nsdt[3]} · C ${reading.nsdt[4]}</td></tr>
+          <tr><td>Stage classifier</td><td>Weighted nearest-centroid distance, softmax posterior (temperature ${NSDT_TEMPERATURE})</td></tr>
+          <tr><td>Classifier confidence</td><td>${confPct}%</td></tr>
+          <tr><td>Expected stage (posterior mean)</td><td>${reading.expected.toFixed(2)}</td></tr>
+          <tr><td>Posterior entropy</td><td>${reading.entropy.toFixed(2)}</td></tr>
+          <tr><td>Physical stability</td><td>${reading.physical}/100 &nbsp;(S×0.7 + (100−T)×0.3)</td></tr>
+          <tr><td>Consciousness stability</td><td>${reading.conscious}/100 &nbsp;(D×0.5 + C×0.5)</td></tr>
+          <tr><td>Divergence</td><td>${reading.divergence} — ${reading.divergenceCategory}</td></tr>
+          <tr><td>Parity / inversion</td><td>${reading.parity} — physically ${INVERSION[reading.stage].physical.toLowerCase()}, consciously ${INVERSION[reading.stage].conscious.toLowerCase()}</td></tr>
+          <tr><td>Middle Path witness score</td><td>${reading.middlePath.witnessScore} (${reading.middlePath.accessed ? "accessed" : "not yet accessed"})</td></tr>
+        </table>
+        <p style="margin-top:8px;">Full posterior across all 10 stages: ${reading.posterior.map((p,i)=>`${i}: ${Math.round(p*100)}%`).join(" · ")}</p>
+        <p style="margin-top:8px;">This is the real classifier: your five numbers are compared by weighted distance to
+        each stage's confirmed centroid, then turned into a probability distribution over all ten stages. The stage
+        shown above is just the single most likely one — the posterior above shows how confident (or split) that
+        call actually is.</p>
+      </details>
+    </div>`;
+}
+
+function runScan(){
+  const nsdt0to10 = readAxisValues("axis-");
+  const domain = document.getElementById("scanDomain").value;
+  const text = document.getElementById("scanText").value;
+  const history100 = getAllNSDT100History();
+  const reading = computeReadingFromNSDT(nsdt0to10, history100, nsdt0to10.reduce((a,b)=>a+b,0));
+  AI_CACHE["live"] = {
+    stage: reading.stage,
+    canonicalName: CANONICAL_STAGE_NAMES[reading.stage],
+    text, domain,
+    data: null, thread: [],
+  };
+  document.getElementById("scanResult").innerHTML =
+    readingHTML(reading) +
+    aiSectionHTML("live") +
+    `<label>Your reflection (optional)</label>
+     <textarea id="scanNote" placeholder="What actually comes up for you, reading this back?"></textarea>
+     <button class="btn" onclick="saveScanEntry()">Save to journal</button>`;
+}
+
+function saveScanEntry(){
+  const nsdt0to10 = readAxisValues("axis-");
+  const domain = document.getElementById("scanDomain").value;
+  const notes = document.getElementById("scanText").value.trim();
+  const history100 = getAllNSDT100History();
+  const reading = computeReadingFromNSDT(nsdt0to10, history100, nsdt0to10.reduce((a,b)=>a+b,0));
+  const entry = {
+    id: uid(), ts: Date.now(),
+    title: document.getElementById("scanTitle").value.trim(),
+    domain, notes, text: notes, reading,
+    note: (document.getElementById("scanNote")?.value || "").trim(),
+  };
+  const liveAI = AI_CACHE["live"];
+  if(liveAI && liveAI.data){
+    entry.ai = { data: liveAI.data, thread: liveAI.thread || [] };
+  }
+  delete AI_CACHE["live"];
+  STATE.patternEntries.unshift(entry);
+  saveState();
+  document.getElementById("scanText").value = "";
+  document.getElementById("scanTitle").value = "";
+  document.getElementById("scanResult").innerHTML = "";
+  renderScanHistory();
+  showToast("Saved to Pattern Scan journal");
+}
+
+function deleteScanEntry(id){
+  STATE.patternEntries = STATE.patternEntries.filter(e=>e.id!==id);
+  saveState(); renderScanHistory();
+}
+
+function renderScanHistory(){
+  const wrap = document.getElementById("scanHistory");
+  if(STATE.patternEntries.length===0){ wrap.innerHTML = `<div class="empty">No saved entries yet.</div>`; return; }
+  STATE.patternEntries.forEach(e=>{
+    AI_CACHE[e.id] = {
+      stage: e.reading.stage,
+      canonicalName: CANONICAL_STAGE_NAMES[e.reading.stage],
+      text: e.text, domain: e.domain,
+      data: e.ai ? e.ai.data : null,
+      thread: e.ai ? (e.ai.thread || []) : [],
+    };
+  });
+  wrap.innerHTML = STATE.patternEntries.map(e=>`
+    <div class="entry">
+      <div class="meta">
+        ${stageBadgeHTML(e.reading.stage)}
+        <span style="color:var(--text-faint)">stage ${e.reading.stage}${e.reading.confidence ? ` · ${Math.round(e.reading.confidence*100)}%` : ""}</span>
+        <span>${fmtDate(e.ts)}</span>
+        ${e.domain ? `<span>· ${e.domain}</span>` : ""}
+      </div>
+      ${e.title ? `<b>${escapeHTML(e.title)}</b>` : ""}
+      ${(e.notes||e.text) ? `<div class="body">${escapeHTML(truncate(e.notes||e.text, 240))}</div>` : ""}
+      ${e.note ? `<div class="note">${escapeHTML(e.note)}</div>` : ""}
+      ${e.reading.quote ? `<div class="quote-box">"${e.reading.quote.text}"<cite>— ${e.reading.quote.author}, ${e.reading.quote.source}</cite></div>` : ""}
+      ${aiSectionHTML(e.id)}
+      <div class="entry-actions">
+        <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${e.reading.stage})">🫁 Breathe (${BREATHING[e.reading.stage].name})</button>
+        <button class="btn secondary small" onclick="deleteScanEntry('${e.id}')">Delete</button>
+      </div>
+    </div>`).join("");
+}
+
+function escapeHTML(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function truncate(s,n){ return s.length>n ? s.slice(0,n)+"…" : s; }
+
+/* ============================================================
+   KAIROS AI — optional backend-powered reading enrichment.
+   Off by default (no backend URL saved = fully local app).
+   Stage classification never happens here; the backend only
+   writes narrative color around a stage already decided by the
+   digit-root math above.
+   ============================================================ */
+const AI_BACKEND_KEY = "kairos_ai_backend_url";
+const AI_CACHE = {}; // aiKey -> { stage, canonicalName, text, domain, data, thread }
+
+function getBackendURL(){
+  return (localStorage.getItem(AI_BACKEND_KEY) || "").trim().replace(/\/+$/,"");
+}
+function saveBackendURL(){
+  const val = (document.getElementById("aiBackendUrl").value || "").trim().replace(/\/+$/,"");
+  if(val) localStorage.setItem(AI_BACKEND_KEY, val);
+  else localStorage.removeItem(AI_BACKEND_KEY);
+  renderAISettingsStatus();
+  showToast(val ? "Kairos AI connected" : "Kairos AI backend cleared");
+}
+function renderAISettingsStatus(){
+  const url = getBackendURL();
+  const el = document.getElementById("aiSettingsStatus");
+  if(!el) return;
+  el.textContent = url
+    ? `Connected to ${url}. "Ask Kairos to go deeper" will appear on readings.`
+    : "Not connected — readings will stay fully local and offline.";
+}
+function isAIConnected(){ return !!getBackendURL(); }
+
+// The canonical internal name used by the rest of this project (kept for
+// consistency with the API and README) for each stage index.
+const CANONICAL_STAGE_NAMES = {
+  0:"PLENARA", 1:"SPARK OF NAVIGATION", 2:"FORGE OF POLARITY", 3:"ENGINE OF EXPRESSION",
+  4:"CRUCIBLE OF EQUILIBRIUM", 5:"DYNAMO OF WILL", 6:"NEXUS OF HARMONY", 7:"LENS OF DISTILLATION",
+  8:"VESSEL OF GROUNDING", 9:"TRANSPARENCY OF THE GUIDE",
+};
+
+function aiSectionHTML(aiKey){
+  if(!isAIConnected()){
+    return `<div class="ai-status">Want a personalized narrative, a Trickster Take, and follow-up questions on
+      this reading? <a href="#" onclick="switchTab('home'); return false;">Connect Kairos AI</a> (optional).</div>`;
+  }
+  const cached = AI_CACHE[aiKey];
+  if(cached && cached.data){
+    return `<div id="ai-${aiKey}">${renderAIResultHTML(aiKey, cached.data, cached.thread||[])}</div>`;
+  }
+  return `<button class="ai-btn" id="ai-btn-${aiKey}" onclick="askKairosDeeper('${aiKey}')">✨ Ask Kairos to go deeper</button>
+    <div id="ai-${aiKey}"></div>`;
+}
+
+async function askKairosDeeper(aiKey){
+  const entry = AI_CACHE[aiKey];
+  if(!entry) return;
+  const btn = document.getElementById(`ai-btn-${aiKey}`);
+  const target = document.getElementById(`ai-${aiKey}`);
+  if(btn){ btn.disabled = true; btn.textContent = "Asking Kairos…"; }
+  target.innerHTML = `<div class="ai-status">Sending your text to Claude for a deeper reading…</div>`;
+  try{
+    const resp = await fetch(`${getBackendURL()}/reading`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: entry.stage,
+        canonical_name: entry.canonicalName,
+        text: entry.text,
+        domain: entry.domain || null,
+      }),
+    });
+    if(!resp.ok){
+      const errBody = await resp.text();
+      throw new Error(`${resp.status}: ${errBody.slice(0,200)}`);
+    }
+    const data = await resp.json();
+    entry.data = data;
+    entry.thread = [];
+    if(btn) btn.remove();
+    target.innerHTML = renderAIResultHTML(aiKey, data, []);
+    persistAIToSavedEntry(aiKey);
+  }catch(e){
+    target.innerHTML = `<div class="ai-status">Kairos couldn't reach the backend (${escapeHTML(String(e.message||e))}).
+      Check the backend address in Home → Kairos AI settings.</div>`;
+    if(btn){ btn.disabled = false; btn.textContent = "✨ Ask Kairos to go deeper"; }
+  }
+}
+
+function renderAIResultHTML(aiKey, data, thread){
+  const questionsHTML = (data.questions||[]).map((q,i)=>{
+    const alreadyAnswered = thread.some(t=>t.question===q);
+    if(alreadyAnswered) return "";
+    return `<button class="ai-q-btn" onclick="openAIAnswerBox('${aiKey}', ${JSON.stringify(i)})">${escapeHTML(q)}</button>`;
+  }).join("");
+  const threadHTML = thread.map(t=>`
+    <div class="turn">
+      <div class="q">${escapeHTML(t.question)}</div>
+      <div class="a">${escapeHTML(t.answer)}</div>
+      ${t.reply ? `<div class="reply">${escapeHTML(t.reply)}</div>` : ""}
+    </div>`).join("");
+  return `
+    <div class="ai-block">
+      <div class="ai-narrative">${escapeHTML(data.narrative)}</div>
+      <div class="trickster-box">
+        <span class="label">${escapeHTML(data.trickster_voice||"Trickster")}'s Take</span>
+        <div class="line">${escapeHTML(data.trickster_take)}</div>
+      </div>
+      <div class="ai-parallel">"${escapeHTML(data.parallel)}"<cite>— ${escapeHTML(data.parallel_source)}</cite></div>
+      <div class="ai-thread">${threadHTML}</div>
+      <div id="ai-answerbox-${aiKey}"></div>
+      <div class="ai-questions" id="ai-questions-${aiKey}">${questionsHTML}</div>
+      <button class="ai-btn secondary" onclick="showShareCard('${aiKey}')">📸 Make a share card</button>
+    </div>`;
+}
+
+function openAIAnswerBox(aiKey, qIndex){
+  const entry = AI_CACHE[aiKey];
+  if(!entry || !entry.data) return;
+  const q = entry.data.questions[qIndex];
+  const box = document.getElementById(`ai-answerbox-${aiKey}`);
+  box.innerHTML = `
+    <div style="margin-top:10px;">
+      <div class="q" style="font-size:.85rem; color:var(--text-dim); font-weight:600;">${escapeHTML(q)}</div>
+      <div class="ai-answer-box">
+        <textarea id="ai-answer-${aiKey}" placeholder="Your answer..."></textarea>
+        <button class="btn small" style="margin-top:0" onclick="submitAIAnswer('${aiKey}', ${JSON.stringify(qIndex)})">Send</button>
+      </div>
+    </div>`;
+}
+
+async function submitAIAnswer(aiKey, qIndex){
+  const entry = AI_CACHE[aiKey];
+  if(!entry || !entry.data) return;
+  const question = entry.data.questions[qIndex];
+  const answerEl = document.getElementById(`ai-answer-${aiKey}`);
+  const answer = (answerEl?.value || "").trim();
+  if(!answer){ showToast("Write a short answer first"); return; }
+  entry.thread = entry.thread || [];
+  const turn = { question, answer, reply: "" };
+  entry.thread.push(turn);
+  document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread) ;
+  try{
+    const resp = await fetch(`${getBackendURL()}/reading/elaborate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: entry.stage,
+        canonical_name: entry.canonicalName,
+        original_text: entry.text,
+        thread: entry.thread.map(t=>({question:t.question, answer:t.answer})),
+      }),
+    });
+    if(!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    turn.reply = data.reply || "";
+    if(data.next_question) entry.data.questions.push(data.next_question);
+    document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread);
+    persistAIToSavedEntry(aiKey);
+  }catch(e){
+    turn.reply = "(Kairos couldn't respond just now — try again in a moment.)";
+    document.getElementById(`ai-${aiKey}`).innerHTML = renderAIResultHTML(aiKey, entry.data, entry.thread);
+  }
+}
+
+// If this aiKey belongs to a saved journal entry, write the AI content back
+// into STATE so it survives a reload. Live, unsaved scan previews (aiKey
+// "live") are not persisted until the reader taps "Save to journal".
+function persistAIToSavedEntry(aiKey){
+  const e = STATE.patternEntries.find(x=>x.id===aiKey);
+  if(e){
+    e.ai = { data: AI_CACHE[aiKey].data, thread: AI_CACHE[aiKey].thread };
+    saveState();
+  }
+}
+
+function showShareCard(aiKey){
+  const entry = AI_CACHE[aiKey];
+  if(!entry) return;
+  const wrap = document.getElementById(`share-${aiKey}`) || (()=>{
+    const d = document.createElement("div");
+    d.id = `share-${aiKey}`;
+    d.style.marginTop = "14px";
+    document.getElementById(`ai-${aiKey}`).appendChild(d);
+    return d;
+  })();
+  const handle = stageByN(entry.stage) ? stageByN(entry.stage).human : `Stage ${entry.stage}`;
+  const line = entry.data.trickster_take || entry.data.narrative || "";
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080; canvas.height = 1080;
+  canvas.id = `canvas-${aiKey}`;
+  canvas.style.maxWidth = "100%";
+  canvas.style.borderRadius = "10px";
+  canvas.style.border = "1px solid #39334c";
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0,0,0,1080);
+  grad.addColorStop(0, "#1b1826"); grad.addColorStop(1, "#14121c");
+  ctx.fillStyle = grad; ctx.fillRect(0,0,1080,1080);
+  ctx.fillStyle = "#e0b568";
+  ctx.font = "700 40px -apple-system, sans-serif";
+  ctx.fillText("KAIROS", 70, 110);
+  ctx.fillStyle = "#786f96";
+  ctx.font = "400 26px -apple-system, sans-serif";
+  ctx.fillText(`Stage ${entry.stage} — ${handle}`, 70, 160);
+  ctx.strokeStyle = "#39334c"; ctx.beginPath(); ctx.moveTo(70,190); ctx.lineTo(1010,190); ctx.stroke();
+  ctx.fillStyle = "#eae6f2";
+  ctx.font = "400 38px -apple-system, sans-serif";
+  wrapCanvasText(ctx, line, 70, 280, 940, 50);
+  ctx.fillStyle = "#786f96";
+  ctx.font = "italic 24px -apple-system, sans-serif";
+  ctx.fillText("kairos — find the pattern in anything", 70, 1000);
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = "kairos-reading.png";
+  link.className = "ai-btn secondary";
+  link.style.display = "inline-block";
+  link.textContent = "⬇ Download image";
+  wrap.innerHTML = "";
+  wrap.appendChild(canvas);
+  wrap.appendChild(document.createElement("br"));
+  wrap.appendChild(link);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = (text||"").split(" ");
+  let line = "";
+  for(let n=0; n<words.length; n++){
+    const test = line + words[n] + " ";
+    if(ctx.measureText(test).width > maxWidth && n > 0){
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+/* ============================================================
+   STREAK — counts distinct calendar days with any journal
+   activity (Pattern Scan, Cycle check-in, or Habit log).
+   ============================================================ */
+function computeStreakDays(){
+  const days = new Set();
+  [...STATE.patternEntries, ...STATE.checkins, ...STATE.habitLogs].forEach(x=>{
+    if(x && x.ts) days.add(new Date(x.ts).toDateString());
+  });
+  if(days.size === 0) return 0;
+  let cursor = new Date();
+  if(!days.has(cursor.toDateString())){
+    // nothing logged yet today -- streak is still alive if yesterday has activity
+    cursor.setDate(cursor.getDate()-1);
+    if(!days.has(cursor.toDateString())) return 0;
+  }
+  let streak = 0;
+  while(days.has(cursor.toDateString())){
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return streak;
+}
+
+
+/* ============================================================
+   CYCLE JOURNAL
+   ============================================================ */
+let selectedAreaId = null;
+let checkinMode = "text";
+
+function addArea(){
+  const input = document.getElementById("newAreaName");
+  const name = input.value.trim();
+  if(!name) return;
+  const area = { id: uid(), name, createdTs: Date.now() };
+  STATE.areas.push(area);
+  saveState();
+  input.value = "";
+  selectedAreaId = area.id;
+  renderCycleTab();
+}
+
+function selectArea(id){
+  selectedAreaId = id;
+  checkinMode = "text";
+  renderCycleTab();
+}
+
+function deleteArea(id){
+  if(!confirm("Delete this life area and all its check-ins?")) return;
+  STATE.areas = STATE.areas.filter(a=>a.id!==id);
+  STATE.checkins = STATE.checkins.filter(c=>c.areaId!==id);
+  if(selectedAreaId===id) selectedAreaId=null;
+  saveState(); renderCycleTab();
+}
+
+function setCheckinMode(mode){
+  checkinMode = mode;
+  document.getElementById("checkinTextMode").style.display = mode==="text" ? "" : "none";
+  document.getElementById("checkinManualMode").style.display = mode==="manual" ? "" : "none";
+  document.getElementById("modeTextBtn").style.borderColor = mode==="text" ? "var(--accent)" : "var(--border)";
+  document.getElementById("modeManualBtn").style.borderColor = mode==="manual" ? "var(--accent)" : "var(--border)";
+}
+
+function saveCheckin(){
+  if(!selectedAreaId) return;
+  let stage, text = "", quote, notation, micro = null, reading = null;
+  if(checkinMode==="text"){
+    text = document.getElementById("checkinText").value;
+    const nsdt0to10 = readAxisValues("ckaxis-");
+    const history100 = getAllNSDT100History();
+    reading = computeReadingFromNSDT(nsdt0to10, history100, nsdt0to10.reduce((a,b)=>a+b,0));
+    stage = reading.stage;
+    quote = reading.quote;
+    notation = `${stage}`;
+    micro = null;
+  } else {
+    stage = parseInt(document.getElementById("checkinManualStage").value, 10);
+    quote = pickQuote(stage, "manual-" + Date.now());
+    const microVal = document.getElementById("checkinManualMicro").value;
+    notation = microVal !== "" ? `${stage}.${microVal}` : `${stage}`;
+    micro = microVal !== "" ? { micro: parseInt(microVal,10), sliceText: "(self-selected)" } : null;
+  }
+  const checkin = {
+    id: uid(), ts: Date.now(), areaId: selectedAreaId, mode: checkinMode,
+    text, stage, notation, micro, quote, reading,
+    note: document.getElementById("checkinNote").value.trim(),
+  };
+  STATE.checkins.push(checkin);
+  saveState();
+  document.getElementById("checkinText").value = "";
+  document.getElementById("checkinNote").value = "";
+  document.getElementById("checkinManualMicro").value = "";
+  showToast("Check-in saved");
+  renderCycleTab();
+}
+
+function deleteCheckin(id){
+  STATE.checkins = STATE.checkins.filter(c=>c.id!==id);
+  saveState(); renderCycleTab();
+}
+
+function areaCheckins(areaId){
+  return STATE.checkins.filter(c=>c.areaId===areaId).sort((a,b)=>a.ts-b.ts);
+}
+
+// Ported from engine/container_rule_engine.py's detect_trap_accumulation:
+// counts how many of the user's own check-ins for this area landed on Stage 8,
+// and how many landed there consecutively — literal counting of their own
+// entries, same as the repeat-stage insight above it.
+function computeTrapRisk(list){
+  const s8total = list.filter(c=>c.stage===8).length;
+  let consecutive = 0;
+  for(let i=list.length-1;i>=0;i--){
+    if(list[i].stage===8) consecutive++; else break;
+  }
+  let risk = "NORMAL";
+  if(consecutive>=3) risk="CRITICAL";
+  else if(consecutive===2) risk="HIGH";
+  else if(s8total>=3) risk="ELEVATED";
+  return { s8total, consecutive, risk };
+}
+
+// Real Shannon entropy over the stages the user has actually logged for this
+// area — not a claim about "signal vs. noise" in any text, just a measure of
+// how consistently their own self-reports cluster on one stage vs. scatter
+// across many. Normalized against log2(10), the max possible spread.
+function stageEntropy(stages){
+  if(stages.length < 4) return null;
+  const freq = {};
+  stages.forEach(s=>freq[s]=(freq[s]||0)+1);
+  let H = 0;
+  Object.values(freq).forEach(c=>{ const p=c/stages.length; H -= p*Math.log2(p); });
+  const Hnorm = H / Math.log2(10);
+  let label;
+  if(Hnorm < 0.3) label = "tightly clustered — a consistent pattern";
+  else if(Hnorm < 0.6) label = "somewhat varied";
+  else label = "scattered across many stages — no dominant pattern yet";
+  return { H: +H.toFixed(2), Hnorm: +Hnorm.toFixed(2), label };
+}
+
+function renderCycleTab(){
+  // area chips
+  const chipsWrap = document.getElementById("areaChips");
+  if(STATE.areas.length===0){
+    chipsWrap.innerHTML = `<div class="empty">Add a life area above to start tracking it.</div>`;
+  } else {
+    chipsWrap.innerHTML = STATE.areas.map(a=>`
+      <span class="area-chip ${a.id===selectedAreaId?'selected':''}" onclick="selectArea('${a.id}')">
+        ${escapeHTML(a.name)} <small style="color:var(--text-faint)">(${areaCheckins(a.id).length})</small>
+      </span>`).join("") +
+      (selectedAreaId ? `<button class="btn danger small" style="margin-left:6px" onclick="deleteArea('${selectedAreaId}')">Delete selected area</button>` : "");
+  }
+
+  const checkinCard = document.getElementById("checkinCard");
+  if(selectedAreaId){
+    const area = STATE.areas.find(a=>a.id===selectedAreaId);
+    checkinCard.style.display = "";
+    document.getElementById("checkinAreaLabel").textContent = "Check in: " + (area ? area.name : "");
+    const sel = document.getElementById("checkinManualStage");
+    if(sel.children.length===0){
+      sel.innerHTML = STAGES.map(s=>`<option value="${s.n}">Stage ${s.n} — ${s.canonical} (${s.human})</option>`).join("");
+    }
+    const microSel = document.getElementById("checkinManualMicro");
+    if(microSel.children.length===0){
+      microSel.innerHTML = `<option value="">— not specified —</option>` +
+        Array.from({length:10},(_,i)=>`<option value="${i}">${i} — ${MICRO_FLAVOR[i]}</option>`).join("");
+    }
+    setCheckinMode(checkinMode);
+  } else {
+    checkinCard.style.display = "none";
+  }
+
+  renderAreaHistory();
+}
+
+function renderAreaHistory(){
+  const wrap = document.getElementById("areaHistoryWrap");
+  if(STATE.areas.length===0){ wrap.innerHTML = ""; return; }
+
+  wrap.innerHTML = STATE.areas.map(area=>{
+    const list = areaCheckins(area.id);
+    if(list.length===0){
+      return `<h3>${escapeHTML(area.name)}</h3><div class="card"><div class="empty">No check-ins yet.</div></div>`;
+    }
+    const recent = list.slice(-8);
+    const freq = {};
+    recent.forEach(c=>freq[c.stage]=(freq[c.stage]||0)+1);
+    const maxStage = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+    let streak = 0;
+    for(let i=list.length-1;i>0;i--){
+      if(list[i].stage===list[i-1].stage) streak++; else break;
+    }
+    const insights = [];
+    if(maxStage && maxStage[1] >= 3){
+      insights.push(`Stage ${maxStage[0]} — ${stageByN(+maxStage[0]).canonical} appears in ${maxStage[1]} of your last ${recent.length} check-ins here.`);
+    }
+    if(streak >= 1){
+      insights.push(`You've logged the same stage ${streak+1} check-ins in a row.`);
+    }
+    const entropy = stageEntropy(recent.map(c=>c.stage));
+    if(entropy){
+      insights.push(`Consistency: ${entropy.label} (entropy ${entropy.Hnorm} of a possible 1.0, over your last ${recent.length} check-ins).`);
+    }
+    const trap = computeTrapRisk(list);
+    return `
+      <h3>${escapeHTML(area.name)}</h3>
+      <div class="card">
+        ${insights.length ? `<div class="banner" style="margin-bottom:${trap.risk!=="NORMAL"?"8px":"14px"};">${insights.join("<br>")}</div>` : ""}
+        ${trap.risk!=="NORMAL" ? `<div class="banner" style="margin-bottom:14px; border-color:var(--danger); color:${trap.risk==="CRITICAL"?"var(--danger)":"var(--text-dim)"};">
+          <b style="color:var(--danger)">Trap risk: ${trap.risk}</b> — ${trap.consecutive>=2
+            ? `Stage 8 logged ${trap.consecutive} check-ins in a row here.`
+            : `Stage 8 logged ${trap.s8total} times in this area's history.`}
+          This project's own model treats repeated Stage 8 as compounding (1.45× per repeat) rather than a
+          plateau — worth noticing what's making the current story hard to update.
+        </div>` : ""}
+        ${list.slice().reverse().map(c=>`
+          <div class="entry">
+            <div class="meta">
+              ${stageBadgeHTML(c.stage)}
+              <span style="color:var(--text-faint)">${c.notation||c.stage}</span>
+              <span>${fmtDate(c.ts)}</span>
+              <span>· ${c.mode==="manual"?"self-selected":"from text"}</span>
+            </div>
+            ${c.text ? `<div class="body">${escapeHTML(truncate(c.text,200))}</div>` : ""}
+            ${c.note ? `<div class="note">${escapeHTML(c.note)}</div>` : ""}
+            ${c.quote ? `<div class="quote-box">"${c.quote.text}"<cite>— ${c.quote.author}, ${c.quote.source}</cite></div>` : ""}
+            <div class="entry-actions">
+              <button class="breathe-btn" style="margin-top:0" onclick="openBreathing(${c.stage})">🫁 Breathe (${BREATHING[c.stage].name})</button>
+              <button class="btn secondary small" onclick="deleteCheckin('${c.id}')">Delete</button>
+            </div>
+          </div>`).join("")}
+      </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   HABIT LOG
+   ============================================================ */
+function renderHabitChecklist(){
+  const el = document.getElementById("habitChecklist");
+  el.innerHTML = STAGES.map(s=>`
+    <details class="habit-group">
+      <summary><span style="color:${stageColor(s.n)}">${geoGlyphSVG(s.n,16)}</span> Stage ${s.n} — ${s.canonical} <span style="color:var(--text-faint);font-weight:400">(${s.human})</span></summary>
+      ${s.habits.map((h,i)=>`
+        <label class="habit-check">
+          <input type="checkbox" value="s${s.n}_h${i}" data-stage="${s.n}">
+          <span>${h}</span>
+        </label>`).join("")}
+    </details>`).join("");
+}
+
+function renderHabitAreaSelect(){
+  const sel = document.getElementById("habitArea");
+  sel.innerHTML = `<option value="">— none —</option>` +
+    STATE.areas.map(a=>`<option value="${a.id}">${escapeHTML(a.name)}</option>`).join("");
+}
+
+function saveHabitLog(){
+  const checked = Array.from(document.querySelectorAll("#habitChecklist input:checked"));
+  if(checked.length===0){ showToast("Check at least one habit"); return; }
+  const log = {
+    id: uid(), ts: Date.now(),
+    areaId: document.getElementById("habitArea").value || null,
+    habits: checked.map(c=>({ id:c.value, stage: parseInt(c.dataset.stage,10) })),
+    note: document.getElementById("habitNote").value.trim(),
+  };
+  STATE.habitLogs.unshift(log);
+  saveState();
+  checked.forEach(c=>c.checked=false);
+  document.getElementById("habitNote").value = "";
+  showToast("Habit log saved");
+  renderHabitsTab();
+}
+
+function deleteHabitLog(id){
+  STATE.habitLogs = STATE.habitLogs.filter(l=>l.id!==id);
+  saveState(); renderHabitsTab();
+}
+
+function renderHabitStats(){
+  const el = document.getElementById("habitStats");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">Log a few entries to see which stages recur most.</div>`; return; }
+  const tally = new Array(10).fill(0);
+  STATE.habitLogs.forEach(l=>l.habits.forEach(h=>tally[h.stage]++));
+  const max = Math.max(...tally, 1);
+  el.innerHTML = STAGES.map(s=>`
+    <div class="bar-row">
+      <div class="label">Stage ${s.n} — ${s.human}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(tally[s.n]/max*100)}%; background:${stageColor(s.n)}"></div></div>
+      <div class="count">${tally[s.n]}</div>
+    </div>`).join("");
+}
+
+function renderHabitHistory(){
+  const el = document.getElementById("habitHistory");
+  if(STATE.habitLogs.length===0){ el.innerHTML = `<div class="empty">No habit logs yet.</div>`; return; }
+  el.innerHTML = STATE.habitLogs.map(l=>{
+    const area = STATE.areas.find(a=>a.id===l.areaId);
+    return `
+      <div class="entry">
+        <div class="meta">
+          <span>${fmtDate(l.ts)}</span>
+          ${area ? `<span>· ${escapeHTML(area.name)}</span>` : ""}
+        </div>
+        <div class="body">${l.habits.map(h=>stageBadgeHTML(h.stage)).join(" ")}</div>
+        ${l.note ? `<div class="note">${escapeHTML(l.note)}</div>` : ""}
+        <div class="entry-actions"><button class="btn secondary small" onclick="deleteHabitLog('${l.id}')">Delete</button></div>
+      </div>`;
+  }).join("");
+}
+
+function renderHabitsTab(){
+  renderHabitChecklist();
+  renderHabitAreaSelect();
+  renderHabitStats();
+  renderHabitHistory();
+}
+
+/* ============================================================
+   STAGE GUIDE
+   ============================================================ */
+function renderGuide(){
+  document.getElementById("guideList").innerHTML = STAGES.map(s=>{
+    const b = BREATHING[s.n];
+    return `
+    <div class="guide-stage">
+      <h3>${stageBadgeHTML(s.n)} <span style="color:var(--text-dim); font-weight:400;">${s.human}</span><span class="guide-form-label">${geoFormLabel(s.n)}</span></h3>
+      <p style="color:var(--text-dim); margin:4px 0 8px 0;">${s.essence}</p>
+      ${inversionHTML(s.n)}
+      <b style="font-size:.85rem; color:var(--text-dim); display:block; margin-top:10px;">Habits to watch for:</b>
+      <ul class="habits">${s.habits.map(h=>`<li>${h}</li>`).join("")}</ul>
+      <div class="prompt-box">${s.prompt}</div>
+      ${QUOTES[s.n].map(q=>`<div class="quote-box">"${q.text}"<cite>— ${q.author}, ${q.source}</cite></div>`).join("")}
+      <button class="breathe-btn" onclick="openBreathing(${s.n})">🫁 ${b.name} (${b.cycles} cycles)</button>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderHomeStats();
+renderTopicGrid();
+renderAxisPanel("axisPanel", "axis-");
+renderAxisPanel("ckAxisPanel", "ckaxis-");
+if(localStorage.getItem("kairos_banner_dismissed")){
+  document.getElementById("disclaimerBanner").style.display="none";
+}
+</script>
+</body>
+</html>

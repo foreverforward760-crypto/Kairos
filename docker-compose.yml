@@ -6,4 +6,19 @@ services:
       - "8002:8000"   # use different port from industrial engine
     environment:
       - PYTHONUNBUFFERED=1
+      # Set these in a local .env file (not committed) or your host's
+      # secret manager -- see README.md "Configuration" for what each does.
+      - KAIROS_STORAGE_BACKEND=${KAIROS_STORAGE_BACKEND:-file}
+      - KAIROS_DATA_DIR=/app/kairos_data
+      - KAIROS_API_KEY=${KAIROS_API_KEY:-}
+      - KAIROS_ALLOWED_ORIGINS=${KAIROS_ALLOWED_ORIGINS:-}
+      - KAIROS_ENABLE_AI_READINGS=${KAIROS_ENABLE_AI_READINGS:-false}
+      - KAIROS_AI_READING_MODEL=${KAIROS_AI_READING_MODEL:-claude-sonnet-5}
+      - KAIROS_ENABLE_AI_SCORING=${KAIROS_ENABLE_AI_SCORING:-false}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - kairos_data:/app/kairos_data
     restart: unless-stopped
+
+volumes:
+  kairos_data:

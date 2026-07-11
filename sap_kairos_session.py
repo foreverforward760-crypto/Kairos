@@ -5,9 +5,19 @@ Supports in‑memory (default) and optional file persistence.
 
 import json
 import os
+import re
 import time
 from typing import List, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
+
+
+def _sanitize_system_id(system_id: str) -> str:
+    """Collapse a system_id to a filesystem-safe token before it's ever used
+    in a file path. Without this, storage_backend="file" would let a caller
+    pass system_id values like "../../etc/passwd" and write/read outside the
+    intended data directory (path traversal)."""
+    safe = re.sub(r"[^A-Za-z0-9_-]", "_", system_id or "")
+    return safe[:200] if safe else "unknown"
 
 @dataclass
 class KairosSnapshot:
@@ -19,13 +29,27 @@ class KairosSnapshot:
     therapeutic_note: str
     somatic_invitation: str
     trickster_wisdom: str
+    nsdt: List[float] = field(default_factory=list)  # raw input vector, for arc-direction history
 
 class KairosSession:
-    def __init__(self, system_id: str, storage_backend: str = "memory", file_path: Optional[str] = None):
+    def __init__(
+        self,
+        system_id: str,
+        storage_backend: str = "memory",
+        file_path: Optional[str] = None,
+        data_dir: Optional[str] = None,
+    ):
         self.system_id = system_id
         self.storage_backend = storage_backend
-        self.file_path = file_path or f"kairos_{system_id}.json"
+        safe_id = _sanitize_system_id(system_id)
+        base_dir = data_dir or "."
+        self.file_path = file_path or os.path.join(base_dir, f"kairos_{safe_id}.json")
         self.snapshots: List[KairosSnapshot] = []
+        # Stage 5 Middle Path Gateway is sticky once accessed -- per the
+        # Tumbling Inversion Principle, a conscious choice at Stage 5
+        # reorganizes the phenomenological character of every remaining
+        # stage in the cycle, not just the moment it's made.
+        self.middle_path_accessed: bool = False
         self._load()
 
     def _load(self):
@@ -33,11 +57,30 @@ class KairosSession:
             with open(self.file_path, 'r') as f:
                 data = json.load(f)
                 self.snapshots = [KairosSnapshot(**item) for item in data.get("snapshots", [])]
+                self.middle_path_accessed = data.get("middle_path_accessed", False)
 
     def _save(self):
         if self.storage_backend == "file":
+            parent = os.path.dirname(self.file_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
             with open(self.file_path, 'w') as f:
-                json.dump({"snapshots": [asdict(s) for s in self.snapshots]}, f, indent=2)
+                json.dump({
+                    "snapshots": [asdict(s) for s in self.snapshots],
+                    "middle_path_accessed": self.middle_path_accessed,
+                }, f, indent=2)
+
+    def mark_middle_path_accessed(self):
+        """Sticky: once True, stays True for the life of this session."""
+        if not self.middle_path_accessed:
+            self.middle_path_accessed = True
+            self._save()
+
+    def get_nsdt_history(self, limit: int = 5) -> List[List[float]]:
+        """Recent NSDT vectors, oldest first, for arc-direction computation.
+        Snapshots saved before this field existed have an empty nsdt and are
+        skipped."""
+        return [s.nsdt for s in self.snapshots[-limit:] if s.nsdt]
 
     def add_snapshot(self, snapshot: KairosSnapshot):
         self.snapshots.append(snapshot)
