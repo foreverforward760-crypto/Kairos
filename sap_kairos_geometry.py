@@ -1,6 +1,6 @@
 """
 LUMINARK Kairos Geometry Engine v1.0
-Designed for human behaviour, therapy, and experimental contexts.
+Designed for journaling, reflection, and experimental contexts. It is not a clinical or therapeutic instrument.
 Regression, oscillation, and voluntary return are allowed and meaningful.
 Kairos: the opportune moment for change.
 """
@@ -31,7 +31,7 @@ STAGE_METADATA_KAIROS = {
         "trickster": "Eshu: 'You have become the threshold – now rest.'"},
 }
 
-# STAGE_CENTROIDS -- reconciled against the confirmed N/S/D/T/C axes
+# STAGE_CENTROIDS -- manually engineered prototype centroids on the N/S/D/T/C axes
 # (Complexity, Stability, Adaptability, Tension, Coherence -- see
 # docs/NSDT_REFERENCE.md and sap_kairos_tumbling_inversion.py).
 #
@@ -58,11 +58,11 @@ STAGE_METADATA_KAIROS = {
 #     at Integration/Insight, eases at Crystallization, falls back toward
 #     Stage 0's simplicity by Stage 9), not derived from anything.
 #
-# Net effect: axis directionality (which of physical/consciousness stability
-# is higher) is now formula-guaranteed correct for every stage. The specific
+# Net effect: axis directionality (which of the project-defined physical/consciousness stability scores
+# is higher) is produced by the selected formulas for each stage. The specific
 # depth of each value is still an engineering judgment call, same as before
-# -- it's reconciled with the confirmed framework, not independently
-# validated against real client data.
+# -- it's reconciled with the confirmed framework, not independently validated against real-world data. The labels do not measure physical
+# stability, consciousness, or autonomic nervous-system states.
 STAGE_CENTROIDS = {
     0: [0.0, 3.93, 8.0, 2.5, 2.0],
     1: [1.5, 4.43, 5.5, 7.0, 7.5],
