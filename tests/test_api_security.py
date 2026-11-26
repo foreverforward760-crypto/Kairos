@@ -62,3 +62,10 @@ def test_request_models_bound_input_sizes():
         api.KairosInput(system_id="x", nsdt=[1.0, 2.0])
     with pytest.raises(Exception):
         api.ReadingInput(stage=1, canonical_name="SPARK", text="x" * 10001)
+
+
+def test_ai_reading_endpoints_require_api_key_dependency():
+    protected_paths = {"/reading", "/reading/elaborate"}
+    for route in api.app.routes:
+        if getattr(route, "path", None) in protected_paths:
+            assert any(dep.call is api.require_api_key for dep in route.dependencies)
