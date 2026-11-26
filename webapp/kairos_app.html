@@ -426,7 +426,7 @@
     <div class="card" id="aiSettingsCard">
       <h2>✨ Kairos AI <span style="color:var(--text-dim); font-weight:400; font-size:.85rem;">(optional)</span></h2>
       <p class="lead" style="margin-bottom:10px;">Every reading works fully offline with no setup. If you want
-        each reading deepened — a personalized narrative, a real story or quote parallel, a Trickster Take, and
+        each reading deepened — a personalized narrative, a possible story or quote parallel (verify attributions), a Trickster Take, and
         follow-up questions — point this at a running Kairos backend (see the project README for how to host one)
         and paste its address below. Leave it blank to skip this entirely.</p>
       <div class="row ai-settings">
@@ -636,7 +636,7 @@
 
 <footer>
   Kairos Reflection Journal — a companion interpretive tool for the Kairos / LASE Stanfield's Axiom of Perpetuity project.<br>
-  Runs entirely in your browser. No data leaves this device.
+  Base readings run in your browser. If you opt into the AI backend, the submitted text is sent to that backend and Anthropic; see the data-handling notice above.
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -1213,7 +1213,7 @@ function runBreathPhase(b, phaseIdx, cycleNum){
 // unstable/consciously stable, even = the reverse, stage 0 = neutral) — a real,
 // consistent part of this project's vocabulary, not a separate measurement.
 /* ============================================================
-   REAL TUMBLING INVERSION ENGINE — ported line-for-line from this
+   TUMBLING INVERSION CALCULATION — ported line-for-line from this
    project's own backend (sap_kairos_geometry.py, sap_kairos_tumbling_
    inversion.py, sap_kairos_stage_paradox.py), NOT reinvented. No word
    count, no letter count, anywhere in this file. The only input is a
@@ -1414,7 +1414,7 @@ const THERAPEUTIC_NOTE_BY_STAGE = {
   5:"Kairos: Bifurcation point. You have full agency to progress or return. No wrong choice — only honest choice.",
   7:"Stage 7: Insight without connection. Consider somatic grounding or reaching out to a trusted other.",
 };
-function getTherapeuticNote(stage, trapLikely){
+function getReflectiveNote(stage, trapLikely){
   if(stage===8) return trapLikely
     ? "⚠️ Stage 8 High Trap: False certainty detected. Offer Release Protocol: gratitude, duality, Ma'at, or witness."
     : "Stage 8 detected. Kairos invitation: 'What would it mean to let go?'";
@@ -1446,7 +1446,7 @@ function computeReadingFromNSDT(nsdt0to10, history100, seedForQuote){
     expected: cls.expected, entropy: cls.entropy,
     physical: inv.physical, conscious: inv.conscious, divergence: inv.divergence,
     divergenceCategory: inv.divergenceCategory, geometricForm: inv.geometricForm, parity: inv.parity,
-    middlePath: mp, paradox, therapeuticNote: getTherapeuticNote(stage, trapLikely),
+    middlePath: mp, paradox, reflectiveNote: getTherapeuticNote(stage, trapLikely),
     quote: pickQuote(stage, seedForQuote || stage),
   };
 }
@@ -1704,10 +1704,10 @@ function readingHTML(reading, forEntryId){
       <div class="prompt-box">${s.prompt}</div>
       ${reading.stage===5 ? stage5ForkHTML(reading) : ""}
       ${paradoxHTML(reading)}
-      <div class="somatic-box"><b>Somatic invitation</b> <span style="color:var(--text-faint); font-size:.78rem;">(${s.polyvagal} state)</span><br>${s.somatic}</div>
+      <div class="somatic-box"><b>Body-awareness prompt</b> <span style="color:var(--text-faint); font-size:.78rem;">(${s.polyvagal} framework association; not measured)</span><br>${s.somatic}</div>
       <div class="trickster-box">${s.trickster}</div>
       ${reading.therapeuticNote ? `<div class="note-box">${reading.therapeuticNote}</div>` : ""}
-      <div class="quote-box">"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
+      <div class="quote-box"><small>Illustrative quote or parallel — verify source and attribution independently</small><br>"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
       <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
       <details class="math">
         <summary>Show the math</summary>
