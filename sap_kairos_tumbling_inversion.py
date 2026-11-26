@@ -31,7 +31,7 @@ import math
 
 @dataclass
 class InversionState:
-    """State of the tumbling inversion for a given NSDT vector."""
+    """Project-defined numerical outputs for a supplied NSDT vector; not measurements of physical or conscious states."""
     stage: int
     parity: str                     # 'even', 'odd', 'boundary'
     physical_stability: float       # 0-100, high = stable
@@ -44,12 +44,12 @@ class InversionState:
 def compute_inversion(nsdt_vector: List[float], stage: int) -> InversionState:
     """Compute the inversion state from an NSDT vector and its stage.
 
-    Physical stability reads mostly from Stability, tempered by Tension
+    The project-defined physical-stability index reads mostly from Stability, tempered by Tension
     (high tension erodes physical stability). Consciousness stability
     reads from Adaptability and Coherence -- the capacity to meet and
     integrate what's happening, not just endure it.
 
-    Divergence is the gap between the Revealed Self (the stability a
+    The project-defined divergence score is the gap between the Revealed Self (the stability a
     system projects) and the Concealed Self (the tension it's actually
     carrying) -- the same gap the Stage 8 Gratitude Mechanism exists to
     close.
