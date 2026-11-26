@@ -1,6 +1,6 @@
 # LUMINARK Kairos — Reflection and Journaling Prototype
 
-Kairos is an experimental reflection and journaling application built around the owner's 0-9-0 / Stanfield's Axiom of Perpetuity framework. The project owner states that the underlying concepts originated with him; AI systems generated the code and proposed supporting implementation mechanisms.
+Kairos is an experimental reflection and journaling application built around the owner's 0-9-0 / Stanfield's Axiom of Perpetuity framework. The project owner states that the underlying concepts and the 0-9-0 / SAP framework originated with him. AI systems generated the implementation code and suggested technical mechanisms. NSDT and the Container Rule were introduced by AI as supporting implementation mechanisms within the owner's framework, not as independent conceptual origins. This records the owner's account and is not a legal determination of copyright ownership, inventorship, or exclusive rights.
 
 ## What it contains
 
