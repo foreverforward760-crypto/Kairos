@@ -120,7 +120,7 @@ class KairosInput(BaseModel):
     allow_regression: bool = True
     temperature: float = Field(0.7, ge=0.05, le=5.0)
     beta: float = Field(0.6, ge=0.0, le=2.0)
-    journal_entry: Optional[str] = None
+    journal_entry: Optional[str] = Field(default=None, max_length=10000)
 
     @field_validator('nsdt')
     @classmethod
@@ -376,6 +376,7 @@ def score_nsdt(inp: ScoreNSDTInput):
         "are an unconfirmed interpretation -- see docs/NSDT_REFERENCE.md."
     )
     result["system_id"] = inp.system_id
+    result["interpretation_notice"] = "AI-generated subjective estimate, not a measurement or validated psychological assessment."
     return result
 
 
@@ -388,10 +389,10 @@ def get_ai_reading(inp: ReadingInput):
     intentional "find a pattern in literally anything" entry mechanic. That
     part stays as-is; it's the game, not a measurement.
 
-    Everything downstream of that number is now the real engine, not
-    narrative invention: this endpoint estimates an NSDT vector from the
-    same text (sap_kairos_nsdt_estimator.py, blind to stage taxonomy), runs
-    it through the actual Tumbling Inversion + stage paradox math
+    Everything downstream of that number is a deterministic, project-defined
+    calculation rather than a validated measurement: this endpoint estimates
+    an NSDT vector from the same text (sap_kairos_nsdt_estimator.py, blind to
+    stage taxonomy), runs it through the Tumbling Inversion + stage-paradox formulas
     (compute_tumbling_inversion_state -- the same function /analyze uses),
     and only then asks Claude to write the human-readable narrative *on top
     of* that computed state, not instead of it.
@@ -482,6 +483,7 @@ def elaborate_ai_reading(inp: ElaborateInput):
         )
     except AIReadingError as e:
         raise HTTPException(status_code=502, detail=str(e))
+    result["interpretation_notice"] = "AI-generated reflective text, not therapy, diagnosis, or a verified source summary."
     return result
 
 
