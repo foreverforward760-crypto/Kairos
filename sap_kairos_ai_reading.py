@@ -2,7 +2,7 @@
 Kairos AI Reading Layer
 
 Generates the AI-deepened portion of a Kairos reading: a short personalized
-narrative, a real story/quote/metaphor parallel, a "Trickster Take" (a
+narrative, a possible illustrative story/quote/metaphor parallel, a "Trickster Take" (a
 short, funny, perspective-flipping line in the voice of one of the
 project's trickster figures), and 1-2 follow-up questions -- plus a
 stateless "elaborate" call that continues the thread once the reader
@@ -93,7 +93,7 @@ came out of the actual formulas, run on an NSDT vector estimated from this same 
 write the human, personalized layer that explains what that computed state actually means for this \
 specific reader: a short narrative, a real parallel (a genuine story, quote, myth, historical moment, \
 or pop-culture reference -- something real, not invented, and actually apt), a "Trickster Take," and \
-one or two follow-up questions.
+one or two follow-up questions. Do not diagnose, prescribe treatment, or present this as clinical therapy.
 
 Use the computed state as the spine of the narrative, not as trivia to mention. If physical stability \
 and consciousness stability diverge a lot, say what that divergence looks like in THEIR words, not \
