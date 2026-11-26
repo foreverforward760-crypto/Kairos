@@ -1,6 +1,6 @@
 """
-LUMINARK Kairos Bayesian Engine v1.0
-Soft, human-agency-aware inference with therapeutic guidance.
+LUMINARK Kairos softmax nearest-centroid classifier.
+The legacy class name is Bayesian; this implementation uses weighted distances and softmax, not a fitted Bayesian prior/likelihood model.
 Kairos: the opportune moment for change.
 """
 
@@ -64,20 +64,21 @@ class KairosBayesian:
         return exp / np.sum(exp)
 
     def _get_therapeutic_note(self, stage: int, entropy: float, trap_energy: float) -> str:
+        # Legacy field/function name. Outputs are reflective prompts, not therapy or clinical guidance.
         if stage == 8:
             if trap_energy > 0.7:
-                return "⚠️ Stage 8 High Trap: False certainty detected. Offer Release Protocol: gratitude, duality, Ma'at, or witness."
+                return "Stage 8 heuristic pattern flag: absolute certainty may be worth examining. Consider a reflective pause."
             else:
-                return "Stage 8 detected. Kairos invitation: 'What would it mean to let go?'"
+                return "Stage 8 pattern: consider the reflective question, 'What would it mean to loosen your grip?'"
         if stage == 7 and self.previous_stage == 8:
-            return "Regression from Stage 8 → 7 observed. This is a refusal of dissolution. Explore the fear beneath the certainty."
+            return "A Stage 8 → 7 transition was recorded by the model. Consider what changed between these entries; the classification is not a diagnosis."
         if stage == 7:
-            return "Stage 7: Insight without connection. Consider somatic grounding or reaching out to a trusted other."
+            return "Stage 7 pattern: consider whether an insight would benefit from discussion or practical grounding."
         if stage == 5:
-            return "Kairos: Bifurcation point. You have full agency to progress or return. No wrong choice – only honest choice."
+            return "Stage 5 pattern: pause to examine the available choices and their trade-offs."
         if stage == 0 and trap_energy > 0.5:
             return "Stage 0 with high energy: This is not collapse – it is a reset. Rest is productive."
-        return "Continue holding space. Trust the process."
+        return "Use this as a prompt for reflection; the model cannot determine what is right for you."
 
     def _get_somatic_invitation(self, stage: int, polyvagal: str) -> str:
         invites = {
