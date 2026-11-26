@@ -56,7 +56,7 @@ DATA_HANDLING_NOTE = (
     "your device using simple word/letter arithmetic -- nothing is sent "
     "anywhere for that part. If you tap \"Ask Kairos to go deeper,\" the "
     "text you're reading gets sent to Claude (Anthropic's AI) to generate "
-    "a personalized narrative, a story parallel, and follow-up questions. "
+    "a personalized narrative, a story parallel, and follow-up questions. AI-generated source parallels may be inaccurate or misattributed; verify any quote or source independently. "
     "That request isn't used to train anything, but as with anything you "
     "type into any online tool: don't paste something here you wouldn't "
     "want to leave your device, and use the same judgment you'd use "
