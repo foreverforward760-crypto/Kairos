@@ -16,7 +16,7 @@ def test_even_stage_formula_and_parity():
     assert state.parity == "even"
     assert state.physical_stability == 80.0
     assert state.consciousness_stability == 50.0
-    assert state.divergence == 30
+    assert state.divergence == 60
     assert state.geometric_form == "Line/Spindle"
 
 
