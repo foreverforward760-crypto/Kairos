@@ -57,7 +57,7 @@ DATA_HANDLING_NOTE = (
     "anywhere for that part. If you tap \"Ask Kairos to go deeper,\" the "
     "text you're reading gets sent to Claude (Anthropic's AI) to generate "
     "a personalized narrative, a story parallel, and follow-up questions. AI-generated source parallels may be inaccurate or misattributed; verify any quote or source independently. "
-    "That request isn't used to train anything, but as with anything you "
+    "Data retention and training treatment are governed by Anthropic's current API terms; review those terms before sending sensitive text. As with anything you "
     "type into any online tool: don't paste something here you wouldn't "
     "want to leave your device, and use the same judgment you'd use "
     "anywhere else online."
