@@ -319,6 +319,7 @@ def analyze_kairos(inp: KairosInput):
         journal_prompt = "What is the decision you are avoiding? What would you choose if you knew you couldn't fail?"
 
     result.update({
+        "interpretation_notice": "Exploratory framework-based reflection, not therapy, diagnosis, or a measurement of physical or conscious states.",
         "system_id": inp.system_id,
         "tumbling_inversion": tumbling_inversion,
         "session": {
@@ -378,7 +379,7 @@ def score_nsdt(inp: ScoreNSDTInput):
     return result
 
 
-@app.post("/reading")
+@app.post("/reading", dependencies=[Depends(require_api_key)])
 def get_ai_reading(inp: ReadingInput):
     """AI-deepened, consumer-facing reading (see sap_kairos_ai_reading.py).
 
@@ -449,10 +450,14 @@ def get_ai_reading(inp: ReadingInput):
     result["disclosure"] = DATA_HANDLING_NOTE
     result["tumbling_inversion"] = tumbling_inversion
     result["nsdt_estimate"] = nsdt_estimate
+    result["interpretation_notice"] = (
+        "Exploratory reflection output, not therapy, diagnosis, or a measurement of physical or conscious states. "
+        "The NSDT vector is an AI-generated estimate and may be inaccurate; verify any quoted source independently."
+    )
     return result
 
 
-@app.post("/reading/elaborate")
+@app.post("/reading/elaborate", dependencies=[Depends(require_api_key)])
 def elaborate_ai_reading(inp: ElaborateInput):
     """Continue a reading's follow-up thread (see sap_kairos_ai_reading.py).
 
