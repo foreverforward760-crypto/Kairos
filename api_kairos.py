@@ -2,7 +2,7 @@
 LUMINARK Kairos Engine v1.0 – Therapeutic API with session tracking, journaling, and coaching.
 Kairos: the opportune moment for change.
 
-Configuration (environment variables, all optional):
+Configuration (environment variables):
   KAIROS_STORAGE_BACKEND   "memory" (default) or "file". "memory" sessions do
                             not survive a process restart and are not shared
                             across multiple uvicorn workers -- use "file" for
@@ -14,6 +14,7 @@ Configuration (environment variables, all optional):
                             protected endpoints are denied unless
                             KAIROS_ALLOW_INSECURE_LOCAL=true and the request
                             originates from loopback.
+  KAIROS_ALLOW_INSECURE_LOCAL  Explicit local-development opt-in; loopback only.
   KAIROS_ALLOWED_ORIGINS   Comma-separated list of origins allowed to call
                             this API from a browser (CORS). If unset, no CORS
                             middleware is added (safe default: no browser
