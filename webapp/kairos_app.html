@@ -1412,7 +1412,7 @@ function engageGratitudeMechanism(nsdt100){
 
 const THERAPEUTIC_NOTE_BY_STAGE = {
   5:"Kairos: Bifurcation point. You have full agency to progress or return. No wrong choice — only honest choice.",
-  7:"Stage 7: Insight without connection. Consider somatic grounding or reaching out to a trusted other.",
+  7:"Stage 7: Insight without connection. Consider a body-awareness exercise or reaching out to a trusted other.",
 };
 function getReflectiveNote(stage, trapLikely){
   if(stage===8) return trapLikely
@@ -1446,7 +1446,7 @@ function computeReadingFromNSDT(nsdt0to10, history100, seedForQuote){
     expected: cls.expected, entropy: cls.entropy,
     physical: inv.physical, conscious: inv.conscious, divergence: inv.divergence,
     divergenceCategory: inv.divergenceCategory, geometricForm: inv.geometricForm, parity: inv.parity,
-    middlePath: mp, paradox, reflectiveNote: getTherapeuticNote(stage, trapLikely),
+    middlePath: mp, paradox, reflectiveNote: getReflectiveNote(stage, trapLikely),
     quote: pickQuote(stage, seedForQuote || stage),
   };
 }
@@ -1706,7 +1706,7 @@ function readingHTML(reading, forEntryId){
       ${paradoxHTML(reading)}
       <div class="somatic-box"><b>Body-awareness prompt</b> <span style="color:var(--text-faint); font-size:.78rem;">(${s.polyvagal} framework association; not measured)</span><br>${s.somatic}</div>
       <div class="trickster-box">${s.trickster}</div>
-      ${reading.therapeuticNote ? `<div class="note-box">${reading.therapeuticNote}</div>` : ""}
+      ${reading.reflectiveNote ? `<div class="note-box">${reading.reflectiveNote}</div>` : ""}
       <div class="quote-box"><small>Illustrative quote or parallel — verify source and attribution independently</small><br>"${reading.quote.text}"<cite>— ${reading.quote.author}, ${reading.quote.source}</cite></div>
       <button class="breathe-btn" onclick="openBreathing(${reading.stage})">🫁 Breathe with this stage (${BREATHING[reading.stage].name})</button>
       <details class="math">
