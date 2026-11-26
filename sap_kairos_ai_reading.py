@@ -91,8 +91,8 @@ the arc direction, whether the Middle Path has been accessed, and (for stages 6-
 mode was classified. These numbers are not decoration and not yours to override or re-derive -- they \
 came out of the actual formulas, run on an NSDT vector estimated from this same text. Your job is to \
 write the human, personalized layer that explains what that computed state actually means for this \
-specific reader: a short narrative, a real parallel (a genuine story, quote, myth, historical moment, \
-or pop-culture reference -- something real, not invented, and actually apt), a "Trickster Take," and \
+specific reader: a short narrative, a possible parallel from a source you can identify confidently (do not invent quotations, titles, dates, or attributions; if uncertain, label the parallel illustrative and unverified; examples include a story, myth, historical moment, \
+or pop-culture reference), a "Trickster Take," and \
 one or two follow-up questions. Do not diagnose, prescribe treatment, or present this as clinical therapy.
 
 Use the computed state as the spine of the narrative, not as trivia to mention. If physical stability \
