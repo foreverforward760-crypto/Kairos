@@ -10,10 +10,10 @@ Configuration (environment variables, all optional):
   KAIROS_DATA_DIR           Directory for session JSON files when
                             KAIROS_STORAGE_BACKEND="file". Defaults to
                             "./kairos_data".
-  KAIROS_API_KEY             If set, every request (except /health) must send
-                            a matching "X-API-Key" header. If unset, the API
-                            is open -- fine for local dev, not for anything
-                            network-reachable.
+  KAIROS_API_KEY             Strong key required for non-local use. If unset,
+                            protected endpoints are denied unless
+                            KAIROS_ALLOW_INSECURE_LOCAL=true and the request
+                            originates from loopback.
   KAIROS_ALLOWED_ORIGINS   Comma-separated list of origins allowed to call
                             this API from a browser (CORS). If unset, no CORS
                             middleware is added (safe default: no browser
@@ -43,8 +43,9 @@ Configuration (environment variables, all optional):
 import os
 import time
 import math
+import secrets
 import numpy as np
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
@@ -73,7 +74,8 @@ from sap_kairos_nsdt_estimator import estimate_nsdt_from_text, NSDTEstimateError
 # --- Configuration (env-driven, all backwards-compatible defaults) ---
 KAIROS_STORAGE_BACKEND = os.environ.get("KAIROS_STORAGE_BACKEND", "memory")
 KAIROS_DATA_DIR = os.environ.get("KAIROS_DATA_DIR", "./kairos_data")
-KAIROS_API_KEY = os.environ.get("KAIROS_API_KEY")  # unset => no auth enforced
+KAIROS_API_KEY = os.environ.get("KAIROS_API_KEY")
+KAIROS_ALLOW_INSECURE_LOCAL = os.environ.get("KAIROS_ALLOW_INSECURE_LOCAL", "").lower() == "true"
 KAIROS_ALLOWED_ORIGINS = os.environ.get("KAIROS_ALLOWED_ORIGINS", "")
 
 app = FastAPI(title="LUMINARK Kairos Engine", version="1.0")
@@ -91,19 +93,33 @@ if KAIROS_ALLOWED_ORIGINS:
 _sessions: dict[str, KairosSession] = {}
 
 
-def require_api_key(x_api_key: Optional[str] = Header(default=None)):
-    """No-op when KAIROS_API_KEY is unset (dev mode). When set, every
-    protected request must include a matching X-API-Key header."""
-    if KAIROS_API_KEY and x_api_key != KAIROS_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+def require_api_key(
+    request: Request,
+    x_api_key: Optional[str] = Header(default=None),
+):
+    """Require a configured API key; allow an explicit loopback-only dev mode."""
+    if KAIROS_API_KEY:
+        if not x_api_key or not secrets.compare_digest(x_api_key, KAIROS_API_KEY):
+            raise HTTPException(status_code=401, detail="Invalid or missing API key")
+        return
+
+    client_host = request.client.host if request.client else ""
+    is_loopback = client_host in {"127.0.0.1", "::1", "localhost", "testclient"}
+    if KAIROS_ALLOW_INSECURE_LOCAL and is_loopback:
+        return
+
+    raise HTTPException(
+        status_code=503,
+        detail="API authentication is not configured. Set KAIROS_API_KEY; local development may explicitly enable KAIROS_ALLOW_INSECURE_LOCAL.",
+    )
 
 
 class KairosInput(BaseModel):
-    system_id: str
-    nsdt: list[float] = Field(..., min_items=5, max_items=5)
+    system_id: str = Field(..., min_length=1, max_length=128)
+    nsdt: list[float] = Field(..., min_length=5, max_length=5)
     allow_regression: bool = True
-    temperature: float = 0.7
-    beta: float = 0.6
+    temperature: float = Field(0.7, ge=0.05, le=5.0)
+    beta: float = Field(0.6, ge=0.0, le=2.0)
     journal_entry: Optional[str] = None
 
     @field_validator('nsdt')
@@ -120,16 +136,16 @@ class KairosInput(BaseModel):
 
 
 class ScoreNSDTInput(BaseModel):
-    notes: str
-    system_id: Optional[str] = None
+    notes: str = Field(..., min_length=1, max_length=10000)
+    system_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
 
 
 class ReadingInput(BaseModel):
     stage: int = Field(..., ge=0, le=9)
-    canonical_name: str
-    text: str
-    domain: Optional[str] = None
-    system_id: Optional[str] = None
+    canonical_name: str = Field(..., min_length=1, max_length=80)
+    text: str = Field(..., min_length=1, max_length=10000)
+    domain: Optional[str] = Field(default=None, max_length=80)
+    system_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
 
     @field_validator('text')
     @classmethod
@@ -140,15 +156,15 @@ class ReadingInput(BaseModel):
 
 
 class ThreadTurn(BaseModel):
-    question: str
-    answer: str
+    question: str = Field(..., min_length=1, max_length=2000)
+    answer: str = Field(..., min_length=1, max_length=2000)
 
 
 class ElaborateInput(BaseModel):
     stage: int = Field(..., ge=0, le=9)
-    canonical_name: str
-    original_text: str
-    thread: list[ThreadTurn] = Field(..., min_items=1)
+    canonical_name: str = Field(..., min_length=1, max_length=80)
+    original_text: str = Field(..., min_length=1, max_length=10000)
+    thread: list[ThreadTurn] = Field(..., min_length=1, max_length=20)
 
 
 def get_or_create_session(system_id: str) -> KairosSession:
